@@ -44,5 +44,7 @@ do
     cp ${BINFILE} ./deb-build/codereason_${VERSION}/opt/codereason/bin/
 done
 
+strip -s ./deb-build/codereason_${VERSION}/opt/codereason/bin/*
+
 echo "Building .deb file..."
 dpkg-deb -v --build ./deb-build/codereason_${VERSION}
