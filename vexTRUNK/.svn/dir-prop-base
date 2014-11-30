@@ -1,0 +1,9 @@
+K 10
+svn:ignore
+V 31
+libvex*.a
+TAG_*
+.deps
+Makefile
+
+END

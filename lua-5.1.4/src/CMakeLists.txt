@@ -1,0 +1,31 @@
+add_library(lua
+            lapi.c      
+            ldebug.c  
+            linit.c     
+            loadlib.c   
+            lstate.c   
+            ltm.c      
+            lzio.c
+            lauxlib.c   
+            ldo.c     
+            liolib.c    
+            lobject.c   
+            lstring.c  
+            print.c
+            lbaselib.c  
+            ldump.c   
+            llex.c      
+            lopcodes.c  
+            lstrlib.c  
+            lcode.c     
+            lfunc.c   
+            lmathlib.c  
+            loslib.c    
+            ltable.c   
+            lundump.c
+            ldblib.c    
+            lgc.c     
+            lmem.c      
+            lparser.c   
+            ltablib.c  
+            lvm.c )

@@ -1,0 +1,1 @@
+EAX = Add[ EBX, RANGE[0, 48] ]
