@@ -1,5 +1,12 @@
 language: cpp
-script: ./install.sh
+before_install:
+- sudo apt-get -y install build-essential g++ cmake
+- sudo apt-get -y install libprotobuf-dev libprotobuf-lite8 libprotobuf8 libprotoc8 protobuf-compiler
+- sudo apt-get -y install libboost-dev libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev
+install:
+- cd llvm-3.2 && tar -xf llvm-3.2.src.tar.gz && cd llvm-3.2.src && mkdir build && cd build && cmake -DLLVM_REQUIRES_RTTI=1 -DCMAKE_BUILD_TYPE=RELEASE -DLLVM_TARGETS_TO_BUILD="X86;ARM" .. && make && sudo make install
+- cd vexTRUNK && make
+script: mkdir build && cd build && cmake .. && make -j2
 compiler:
 - gcc
 - clang
