@@ -1,0 +1,8 @@
+language: cpp
+script: ./install.sh
+compiler:
+- gcc
+- clang
+matrix:
+  allow_failures:
+    - compiler: clang
