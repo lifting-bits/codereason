@@ -31,7 +31,7 @@ do
 done
 
 
-LLVM_BINS=$(find ./build/llvm-3.2 -executable -type f ! -name '*.so')
+LLVM_BINS=$(find ./build/llvm-3.2.src/build/bin -executable -type f ! -name '*.so')
 if [ "${LLVM_BINS}" == "" ]
 then
     echo "Could not find LLVM binaries. Did you build CodeReason?"
