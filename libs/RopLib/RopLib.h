@@ -89,7 +89,7 @@ public:
 
     void getBlocks(void);
 
-    void getBlocks(boost::uint32_t blockCount);
+    bool getBlocks(boost::uint32_t blockCount);
 
     virtual void evalOneBlock(void);
 

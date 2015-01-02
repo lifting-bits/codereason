@@ -478,7 +478,10 @@ int main(int argc, char *argv[]) {
     {
       if(rls.needsMoreBlocks())
       {
-        rls.getBlocks(bucketSize);
+        if(rls.getBlocks(bucketSize) == false) {
+			std::cout << "failed to get blocks, bailing" << std::endl;
+			break;
+		}
         continue;
       }
 

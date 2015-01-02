@@ -231,7 +231,7 @@ list<BlockPtr> RopLibSearcher::decodeBlocks(void *c, secVT code, ostream &s, uns
 }
 
 //get at most count blocks
-void RopLibSearcher::getBlocks(uint32_t count) 
+bool RopLibSearcher::getBlocks(uint32_t count) 
 {
   uint32_t  soFar = 0;
   //we should start at the last place we left off, this is told to us
@@ -272,7 +272,11 @@ void RopLibSearcher::getBlocks(uint32_t count)
       soFar += bufLen;
   }
 
-  assert(curBuf != NULL && curBufLen != 0);
+  //assert(curBuf != NULL && curBufLen != 0);
+  if(curBuf == NULL && curBufLen == 0) {
+    cout << "curBuf is null, this is bad" << endl;
+    return false;
+  }
   assert(start < curBufLen);
 
   cout << "retreiving up to " << count << " blocks" << endl;
@@ -316,7 +320,7 @@ void RopLibSearcher::getBlocks(uint32_t count)
 
   cout << endl;
 
-  return;
+  return true;
 }
 
 void RopLibSearcher::getBlocks(void) {
