@@ -92,12 +92,14 @@ int main(int argc, char *argv[]) {
     string                                  inputFile;
     string                                  outputFile;
     string                                  filter(".*");
+    unsigned int                            maxBlockSize;
 
     d.add_options()
         ("pe", "specify PE input file")
         ("mach-o", "specify mach-o input file")
         ("ucache", "usercache")
         ("raw", "raw input file")
+        ("block-size,n", program_options::value<unsigned int>(), "max size in statements of blocks to search")
         ("architecture,a", program_options::value<string>(), "architecture to search")
         ("input,i", program_options::value<string>(), "input file")
         ("filter", program_options::value<string>(), "file filter")
@@ -110,6 +112,12 @@ int main(int argc, char *argv[]) {
     if( vm.count("version") ) {
         cout << d << endl;
         return 0;
+    }
+
+    if( vm.count("block-size") ) {
+      maxBlockSize = vm["block-size"].as<unsigned int>();
+    } else {
+      maxBlockSize = 25;
     }
 
     if( vm.count("input") ) {
@@ -190,6 +198,7 @@ int main(int argc, char *argv[]) {
                                     (len-i),
                                     baseAddr+i,
                                     a,
+                                    maxBlockSize,
                                     bl);
             if( r ) {
                 //blocksFound.push_back(bl);

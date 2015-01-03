@@ -357,6 +357,7 @@ int main(int argc, char *argv[]) {
     std::string                             dbOutFile;
     Condition                               *cs;
     int                                     jumps;
+    unsigned int                            maxSize;
     uint32_t                                bucketSize;
 /*
     llvm::InitializeAllTargetInfos();
@@ -372,6 +373,7 @@ int main(int argc, char *argv[]) {
         ("ucache", "is a dyld cache")
         ("raw", "is a raw file")
         ("db", "is a DB file")
+        ("block-size,n", program_options::value<unsigned int>(), "max size in statements of blocks to search")
         ("search-files,s", program_options::value<std::string>(), "files in input to search")
         ("blocks-out", program_options::value<std::string>(), "seralize input to a DB")
         ("conditions,i", program_options::value<std::string>(), "input script file")
@@ -388,6 +390,12 @@ int main(int argc, char *argv[]) {
         bucketSize = vm["bucketsize"].as<uint32_t>();
     } else {
         bucketSize = 0x1000;
+    }
+
+    if( vm.count("block-size") ) {
+      maxSize = vm["block-size"].as<unsigned int>();
+    } else {
+      maxSize = 25;
     }
 
     if( vm.count("blocks-out") ) {
@@ -454,7 +462,7 @@ int main(int argc, char *argv[]) {
     RopLibVisitorPtr    mvee(new MatchesVEE(cs, jumps));
 
     //construct a searcher class 
-    RopLibSearcher  rls(mvee, inputFile, filesToSearch, fmt, ta);
+    RopLibSearcher  rls(mvee, inputFile, filesToSearch, fmt, ta, maxSize);
 
     //initialize with some blocks
     //std::cerr << "building blocks..." << std::endl;

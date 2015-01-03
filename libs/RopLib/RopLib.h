@@ -67,10 +67,11 @@ protected:
     TargetArch                          tarch;
     void                                *decodeCtx;
     ExecCodeProviderPtr                 codeProvider;
+    unsigned int                        maxNumStatements;
 public:
-    RopLibSearcher(std::string sourceFile, std::string f, FileFormat fmt, TargetArch t);
-    RopLibSearcher(RopLibVisitorPtr v, std::string sourceFile, std::string f, FileFormat fmt, TargetArch t);
-    RopLibSearcher(RopLibVisitorPtr v, std::list<BlockPtr>, void *, TargetArch);
+    RopLibSearcher(std::string sourceFile, std::string f, FileFormat fmt, TargetArch t, unsigned int m);
+    RopLibSearcher(RopLibVisitorPtr v, std::string sourceFile, std::string f, FileFormat fmt, TargetArch t, unsigned int m);
+    RopLibSearcher(RopLibVisitorPtr v, std::list<BlockPtr>, void *, TargetArch, unsigned int m);
 
     boost::uint64_t getNumBlocks(void) { return this->totalBlocks; }
 
@@ -107,7 +108,7 @@ public:
         return b;
     }
     std::map<boost::uint64_t, BlockPtr> getBlockMap(void) { return this->blockMap; }
-    static std::list<BlockPtr> decodeBlocks(void *, secVT, std::ostream &);
+    static std::list<BlockPtr> decodeBlocks(void *, secVT, std::ostream &, unsigned int);
 };
 
 typedef boost::shared_ptr<RopLibSearcher>   RopLibSearcherPtr;
@@ -120,8 +121,8 @@ class StatefulRopLibSearcher : public RopLibSearcher {
 private:
     
 public:
-    StatefulRopLibSearcher(RopLibVisitorPtr, std::string, std::string, FileFormat, TargetArch);
-    StatefulRopLibSearcher(RopLibVisitorPtr, std::list<BlockPtr>, void *, TargetArch);
+    StatefulRopLibSearcher(RopLibVisitorPtr, std::string, std::string, FileFormat, TargetArch, unsigned int);
+    StatefulRopLibSearcher(RopLibVisitorPtr, std::list<BlockPtr>, void *, TargetArch, unsigned int);
     virtual void evalOneBlock();
 };
 

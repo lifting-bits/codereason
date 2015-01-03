@@ -26,7 +26,8 @@ BlockPtr getBlockFromOff(   void *ctx,
                             uint32_t    len,
                             uint32_t    off,
                             uint32_t    va,
-                            TargetArch  ta);
+                            TargetArch  ta,
+                            unsigned int  m);
 
 class PeBlockProvider : public BlockProvider {
 private:
@@ -34,11 +35,13 @@ private:
     unsigned long peBufLen;
     unsigned char *peBuf;
     void *dcctx;
+    unsigned int  m;
 public:
     PeBlockProvider(const PeLib::PeHeaderT<32> &p, 
                     unsigned long len, 
                     unsigned char *buf,
-                    void *c);
+                    void *c,
+                    unsigned int m);
 
     virtual BlockPtr getNextBlock(uint64_t VA);
 };
@@ -62,11 +65,13 @@ BlockPtr BlankBlockProvider::getNextBlock(uint64_t VA) {
 PeBlockProvider::PeBlockProvider(   const PeLib::PeHeaderT<32>  &p,
                                     unsigned long               len,
                                     unsigned char               *buf,
-                                    void                        *c) : 
+                                    void                        *c,
+                                    unsigned int                mi) : 
  peHeader(p),
  peBufLen(len),
  peBuf(buf),
- dcctx(c)
+ dcctx(c),
+ m(mi)
 {
 
     return;
@@ -87,7 +92,8 @@ BlockPtr PeBlockProvider::getNextBlock(uint64_t VA) {
                                         this->peBufLen,
                                         off,
                                         VA,
-                                        ta);
+                                        ta,
+                                        this->m);
     }
 
     return nextBlock;
@@ -155,12 +161,13 @@ void walkPE32(const PeLib::PeHeaderT<32> &p) {
     return;
 }
 
-BlockPtr getBlockFromOff(   void        *ctx, 
-                            uint8_t     *buf, 
-                            uint32_t    len,
-                            uint32_t    off,
-                            uint32_t    va,
-                            TargetArch  ta) 
+BlockPtr getBlockFromOff(   void          *ctx, 
+                            uint8_t       *buf, 
+                            uint32_t      len,
+                            uint32_t      off,
+                            uint32_t      va,
+                            TargetArch    ta,
+                            unsigned int  m) 
 {
     BlockPtr    b;
     BlockPtr    br;
@@ -170,7 +177,8 @@ BlockPtr getBlockFromOff(   void        *ctx,
                             buf+off, 
                             len, 
                             va, 
-                            ta, 
+                            ta,
+                            m,
                             br);
     if( r ) {
         b = br;
@@ -201,7 +209,8 @@ void doWalkFromOff( void                        *ctx,
                     unsigned long               startOff,
                     const PeLib::PeHeaderT<32>  &peh,
                     vector<BlockPtr>            &blocksOut,
-                    TargetArch                  ta)
+                    TargetArch                  ta,
+                    unsigned int                m)
 {
     unsigned long curOff = startOff;
 
@@ -212,7 +221,8 @@ void doWalkFromOff( void                        *ctx,
                                         bufLen-curOff, 
                                         curOff, 
                                         peh.offsetToVa(curOff),
-                                        ta);
+                                        ta,
+                                        m);
 
         if( b ) {
             //okay, we have a block, add it
@@ -225,7 +235,7 @@ void doWalkFromOff( void                        *ctx,
     return;
 }
 
-void doPeMode(string filePath, Condition *cond) {
+void doPeMode(string filePath, Condition *cond, unsigned int m) {
     PeLib::PeFile   *pEF = PeLib::openPeFile(filePath);
 
     pEF->readMzHeader();
@@ -287,7 +297,7 @@ void doPeMode(string filePath, Condition *cond) {
         //okay drive the shell for PE mode
         BlockPtr curBlock;
 
-        PeBlockProviderPtr pep(new PeBlockProvider(peh, secLen, sec, dcctx));
+        PeBlockProviderPtr pep(new PeBlockProvider(peh, secLen, sec, dcctx, m));
         VexExecutionStatePtr    oldVss = cond->getState();
         VexExecutionStatePtr    vss = 
             VexExecutionStatePtr(new VexExecutionState(*oldVss.get()));
@@ -320,7 +330,8 @@ void doPeMode(string filePath, Condition *cond) {
                                         currentOff, 
                                         peh, 
                                         fb,
-                                        peArch);
+                                        peArch,
+                                        m);
                         cout << "got " << fb.size() << " blocks" << endl;
                     }
                     break;
@@ -339,7 +350,8 @@ void doPeMode(string filePath, Condition *cond) {
                                                 bytesLeft, 
                                                 currentOff, 
                                                 dw,
-                                                peArch);
+                                                peArch,
+                                                m);
 
                     if( curBlock) {
                         vee = VexExecutionEngine(pep, curBlock, vss);
@@ -400,7 +412,7 @@ void doPeMode(string filePath, Condition *cond) {
     return;
 }
 
-void doBlockMode(string filePath, Condition *cond, TargetArch tarch) {
+void doBlockMode(string filePath, Condition *cond, TargetArch tarch, unsigned int m) {
     unsigned long bufLen;
     unsigned char *mappedFile = NULL;
 
@@ -444,6 +456,7 @@ void doBlockMode(string filePath, Condition *cond, TargetArch tarch) {
                             bufLen,
                             baseAddr,
                             tarch,
+                            m,
                             block);
 
     if( !res ) {
@@ -567,6 +580,7 @@ void doBlockMode(string filePath, Condition *cond, TargetArch tarch) {
                                     bufLen-newOff,
                                     baseAddr+newOff,
                                     tarch,
+                                    m,
                                     newBlock);
                                 if( res ) {
                                     block = newBlock;
@@ -679,6 +693,7 @@ void doBlockMode(string filePath, Condition *cond, TargetArch tarch) {
                             bufLen-newOff,
                             baseAddr+newOff,
                             tarch,
+                            m,
                             newBlock);
                         if( res ) {
                             block = newBlock;
@@ -711,9 +726,10 @@ void doBlockMode(string filePath, Condition *cond, TargetArch tarch) {
 }
 
 int main(int argc, char *argv[]) {
-    TargetArch  tarch = { INVALID };
-    std::string inFilePath; 
-    std::string inPeFilePath;
+    TargetArch    tarch = { INVALID };
+    std::string   inFilePath; 
+    std::string   inPeFilePath;
+    unsigned int  maxBlockSize; 
 
     std::string stateFilePath;
     boost::program_options::options_description d("options");
@@ -722,6 +738,7 @@ int main(int argc, char *argv[]) {
     d.add_options()
         ("version,v", "show version")
         ("help,h", "print help")
+        ("block-size,n", program_options::value<unsigned int>(), "max size in statements of blocks to search")
         ("conditions-file,i", boost::program_options::value<std::string>(), "conditions")
         ("raw-file,f", boost::program_options::value<std::string>(), "input raw file")
         ("pe-file,p", boost::program_options::value<std::string>(), "input PE file")
@@ -739,6 +756,12 @@ int main(int argc, char *argv[]) {
     if( vm.count("version") ) {
         std::cout << d << std::endl;
         return 0;
+    }
+
+    if( vm.count("block-size") ) {
+      maxBlockSize = vm["block-size"].as<unsigned int>();
+    } else {
+      maxBlockSize = 25;
     }
 
     if( vm.count("conditions-file") ) {
@@ -788,9 +811,9 @@ int main(int argc, char *argv[]) {
 
     initLibState();
     if( inFilePath.size() > 0 ) {
-        doBlockMode(inFilePath, cs, tarch);
+        doBlockMode(inFilePath, cs, tarch, maxBlockSize);
     } else if( inPeFilePath.size() > 0 ) {
-        doPeMode(inPeFilePath, cs);
+        doPeMode(inPeFilePath, cs, maxBlockSize);
     }
     
     return 0;

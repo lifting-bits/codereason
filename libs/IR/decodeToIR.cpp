@@ -77,7 +77,8 @@ struct OneBlockTransCtx
 {
 	BlockPtr        b;
 	unsigned long   curId;
-    TargetArch      ta;
+  TargetArch      ta;
+  unsigned int    maxSize;
 };
 
 class TranslateException {
@@ -198,52 +199,6 @@ IRSB *
 #ifdef _MSC_BUILD 
 __cdecl
 #endif
-convertCallback(void *ctx, 
-				IRSB *bb_in, 
-				VexGuestLayout *vgl, 
-				VexGuestExtents *vge, 
-				IRType girty, 
-				IRType hirty ) 
-{
-	TransContext	*tcxt = (TransContext *)ctx;
-
-	VBlockPtr    b = VBlockPtr(new VBlock(0, tcxt->ta));
-
-    b->buildFromIRSB(bb_in);
-
-	if( !tcxt->isBlockInCtx(b) ) {
-	    tcxt->blocks.push_back(boost::static_pointer_cast<Block>(b));
-	} 
-
-	return bb_in;
-}
-
-IRSB *
-#ifdef _MSC_BUILD 
-__cdecl
-#endif
-convertCallback2(void *ctx, 
-				IRSB *bb_in, 
-				VexGuestLayout *vgl, 
-				VexGuestExtents *vge, 
-				IRType girty, 
-				IRType hirty ) 
-{
-	TransContext2	*tcxt = (TransContext2 *)ctx;
-
-	VBlockPtr   b = VBlockPtr(new VBlock(tcxt->curId, tcxt->targetArch));
-
-    b->buildFromIRSB(bb_in);
-
-	tcxt->blocks.push_back(boost::static_pointer_cast<Block>(b));
-
-	return bb_in;
-}
-
-IRSB *
-#ifdef _MSC_BUILD 
-__cdecl
-#endif
 convertToOneBlockCb(void *ctx,
 				  IRSB *bb_in,
 				  VexGuestLayout *vgl,
@@ -251,12 +206,12 @@ convertToOneBlockCb(void *ctx,
 				  IRType			girty,
 				  IRType			hirty)
 {
-	//Block **b = (Block **)ctx;
-	OneBlockTransCtx	*obtc = (OneBlockTransCtx *)ctx;
-
+  OneBlockTransCtx	*obtc = (OneBlockTransCtx *)ctx;
+  if(bb_in->stmts_used < obtc->maxSize) {
     VBlockPtr b = VBlockPtr(new VBlock(obtc->curId, obtc->ta));
     b->buildFromIRSB(bb_in);
     obtc->b = boost::static_pointer_cast<Block>(b);
+  }
 
 	return bb_in;
 }
@@ -347,98 +302,13 @@ bool runVEXOnBlobWithCallback(	DecodeLibState	*dls,
 	return didGood;
 }
 
-/* sequentially scan through a block of data
- * treat the data as code unilaterally
- * convert the code into VEX IR, and then, our statements
- */
-bool convertBlobToBlocks(void               *ctx,
-						 unsigned char      *b, 
-						 unsigned long      bufLen, 
-						 vector<BlockPtr>   &blocks) 
-{
-	unsigned long	totalBytesRead=0;
-	unsigned long	maxBytesLeft=bufLen;
-	unsigned long   baseAddr = 0x1000;
-	TransContext	*tcxt = new TransContext(blocks);
-	bool			result = true;
-	DecodeLibState	*dls = (DecodeLibState *)ctx;
-
-	do
-	{
-		unsigned long bytesRead=0;
-		bool c = runVEXOnBlobWithCallback(	dls,
-											b,
-											maxBytesLeft,
-											baseAddr,
-											convertCallback, 
-											tcxt, 
-											&bytesRead);
-		if( !c || bytesRead == 0 ) {
-			//result = false;
-			//break;
-			//these bytes were bad, skip ahead at least one
-			bytesRead = 1;
-		}
-
-		totalBytesRead += bytesRead;
-		baseAddr += bytesRead;
-		b += bytesRead;
-		maxBytesLeft -= bytesRead;
-	} while( totalBytesRead < bufLen );
-
-	return result;
-}
-
-void convertToBlockVec(void				    *ctx,
-					   unsigned char	    *buf,
-					   unsigned long	    bufLen,
-					   unsigned long	    baseAddress,
-					   vector<BlockPtr>	    &blocksOut,
-					   TargetArch		    arch) 
-{
-	DecodeLibState	*dls = (DecodeLibState *)ctx;
-
-	unsigned char	*b = buf;
-	unsigned long	totalBytesRead=0;
-	unsigned long	maxBytesLeft=bufLen;
-	TransContext2	*tcxt = new TransContext2(blocksOut);
-
-	tcxt->blocks = blocksOut;
-	tcxt->targetArch = arch;
-	tcxt->curId = 0;
-
-	do
-	{
-		unsigned long bytesRead=0;
-
-		bool c = runVEXOnBlobWithCallback(	dls,
-			b,
-			maxBytesLeft,
-			baseAddress,
-			convertCallback2, 
-			tcxt, 
-			&bytesRead);
-
-		if( !c || bytesRead == 0 ) {
-			bytesRead = 1;
-		} else {
-			tcxt->curId = tcxt->curId + 1;
-		}
-
-		totalBytesRead += 1;
-		baseAddress += 1;
-		b += 1;
-		maxBytesLeft -= 1;
-	} while( totalBytesRead < bufLen );
-
-	return;
-}
-bool convertToOneBlock(void				*ctx,
-					   unsigned char	*buf,
-					   unsigned long	bufLen,
-					   unsigned long	baseAddr,
-					   TargetArch		arch,
-					   BlockPtr         &blockOut)
+bool convertToOneBlock( void				  *ctx,
+					              unsigned char	*buf,
+					              unsigned long	bufLen,
+					              unsigned long	baseAddr,
+					              TargetArch		arch,
+                        unsigned int  maxNumStmts,
+					              BlockPtr      &blockOut)
 {
 	bool				result=true;
 	DecodeLibState		*dls = (DecodeLibState*)ctx;
@@ -446,7 +316,8 @@ bool convertToOneBlock(void				*ctx,
 	unsigned long		nbytes;
 
 	obtc.curId = 0;
-    obtc.ta = arch;
+  obtc.ta = arch;
+  obtc.maxSize = maxNumStmts;
 
     //if this is ARM and it is THUMB, we need to perpetrate a hack
     if( arch.ta == ARM && arch.tm == THUMB ) {
@@ -464,106 +335,14 @@ bool convertToOneBlock(void				*ctx,
                                         &obtc, 
                                         &nbytes);
 
+    if(!(obtc.b)) {
+      result = false;
+    }
     if( result ) {
         blockOut = obtc.b;
     }
 
 	return result;
-}
-
-/* convert the buffer into a flow (a linked series of blocks)
- * we need to do some more complicated stuff here, namely, 
- * resolution of jmp targets
- */
-bool convertToFlow(void             *ctx,
-				   unsigned char	*buf,
-				   unsigned long	bufLen,
-				   unsigned long	entryOffset,
-				   unsigned long	baseAddress,
-				   FlowPtr		    &f) 
-{
-#if 0
-	DecodeLibState	*dls = (DecodeLibState *)ctx;
-	bool res = true;
-	vector<unsigned long long>	blockAddrs;
-
-	blockAddrs.push_back(entryOffset+baseAddress);
-
-	*f = new Flow();
-	Flow *lf = *f;
-
-	//cout << "convertToFlow enter" << endl;
-	unsigned long blockID = 0;
-	while( blockAddrs.size() > 0 ) {
-		unsigned long long	newBlock = blockAddrs[blockAddrs.size()-1];
-		unsigned char		*decodeHere = (unsigned char *)((newBlock-baseAddress)+buf);
-		unsigned long nbytes;
-		Block *newB;
-		blockAddrs.pop_back();
-		OneBlockTransCtx	obtc;
-		obtc.b = NULL;
-		obtc.curId = blockID;
-
-		//TODO: check that we are not traversing off the edge of the buffer
-		//but we're not scanning linearly, so there's no point in keeping track
-		//of the number of bytes we've traversed
-		bool r;
-
-		r = runVEXOnBlobWithCallback(dls, decodeHere, bufLen, newBlock, convertToOneBlock, &obtc, &nbytes);
-
-		if( !r ) {
-			res = false;
-			break;
-		}
-
-		newB = obtc.b;
-		//VEX should have given us a block
-		assert(newB != NULL);
-
-		//cout << "new block " << endl;
-		//cout << newB->printBlock() << endl;
-
-		//does the new block go anywhere interesting?
-		std::set<unsigned long long>	tgts = newB->getHardTargets();
-
-		//if the new block flows to a new-to-the-flow address, 
-		//add those addresses to the decode list
-		if( tgts.size() > 0 ) {
-			//do we have any of these targets in the flow already?
-			std::set<unsigned long long>::iterator	it = tgts.begin();
-			std::set<unsigned long long>::iterator	e = tgts.end();
-
-			while( it != e ) {
-				unsigned long long	addr = *it;
-
-				//this BB SHOULD be unique in our flow
-				if( !lf->isAddrInFlowCode(addr) && addr != newB->getBlockBase() ) {
-					//we don't have this already, put it into the blockAddrs list
-					blockAddrs.push_back(addr);
-				}
-				++it;
-			}
-		}
-
-		//if we don't have this block already, add it
-		//TODO, we need to deal with block splitting
-		if( !lf->isAddrInFlowCode(newB->getBlockBase()) && !lf->isAddrInFlowCode(newB->getBlockEnd()) ) {
-			lf->addBlockToFlow(newB);
-			blockID++;
-		} else if ( !lf->isAddrInFlowCode(newB->getBlockBase()) && lf->isAddrInFlowCode(newB->getBlockEnd()) ) {
-			//there is an overlap on one end
-		}
-	}
-
-	/*if( res ) {
-		lf->complete();
-	}*/
-
-	//cout << "convertToFlow end " << endl;
-
-	return res;
-#endif
-    return false;//do this later
 }
 
 void * initDecodeLib(TargetInfo	ti, bool do_throw, bool dbg_spew) {

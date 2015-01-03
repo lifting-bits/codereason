@@ -18,7 +18,7 @@ class BlockProvider : public boost::enable_shared_from_this<BlockProvider> {
 private:
     
 public:
-    BlockProvider() { return; }
+  BlockProvider() { return; }
 
 	virtual BlockPtr getNextBlock(boost::uint64_t VA)=0;
 };

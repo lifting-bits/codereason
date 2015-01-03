@@ -18,34 +18,16 @@ struct TargetInfo {
 	TargetArch	tarch;
 };
 
-bool convertBlobToBlocks(   void *ctx, 
-                            unsigned char *b, 
-                            unsigned long bufLen, 
-                            std::vector<BlockPtr> &blocks);
-
 void * initDecodeLib(TargetInfo, bool do_throw, bool dbg_spew);
 
 void * initDecodeLib2(TargetArch, bool do_throw, bool dbg_spew);
-
-bool convertToFlow(void             *ctx,
-				   unsigned char	*buf,
-				   unsigned long	bufLen,
-				   unsigned long	entryOffset,
-				   unsigned long	baseAddress,
-				   FlowPtr		    &f);
-
-void convertToBlockVec(void				*ctx,
-					   unsigned char	*buf,
-					   unsigned long	bufLen,
-					   unsigned long	baseAddress,
-					   std::vector<BlockPtr>	&blocksOut,
-					   TargetArch		arch);
 
 bool convertToOneBlock(void				*ctx,
 					   unsigned char	*buf,
 					   unsigned long	bufLen,
 					   unsigned long	baseAddr,
 					   TargetArch		arch,
+             unsigned int maxStatements,
 					   BlockPtr			&blockOut);
 
 void finiDecodeLib(void *ctx);

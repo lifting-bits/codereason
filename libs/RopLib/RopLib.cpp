@@ -29,13 +29,15 @@ void print_progress(double Total, double Done, ostream &s) {
     return;
 }
 
-RopLibSearcher::RopLibSearcher( string      sourceFile,
-                                string      fnSearch,
-                                FileFormat  fmt,
-                                TargetArch  t) :
+RopLibSearcher::RopLibSearcher( string        sourceFile,
+                                string        fnSearch,
+                                FileFormat    fmt,
+                                TargetArch    t,
+                                unsigned int  m) :
     codeProvider(new ExecCodeProvider(sourceFile, fmt, t)),
     tarch(t),
-    totalBlocks(0)
+    totalBlocks(0),
+    maxNumStatements(m)
 {
     TargetInfo  ti;
     //also, initialize the VEX context
@@ -90,14 +92,16 @@ RopLibSearcher::RopLibSearcher( string      sourceFile,
 RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
                                 list<BlockPtr>  blocks,
                                 void            *ctx,
-                                TargetArch      t) :
+                                TargetArch      t,
+                                unsigned int    m) :
     decodedBlocks(blocks),
     visitor(v),
     tarch(t),
     totalBlocks(blocks.size()),
     decodeCtx(ctx),
     translatedBlocks(blocks.size()),
-    evaluatedBlocks(0)
+    evaluatedBlocks(0),
+    maxNumStatements(m)
 {
   //populate the BlockMap based on the blocks object we were given 
   for(list<BlockPtr>::iterator it = blocks.begin(), e = blocks.end();
@@ -116,12 +120,14 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
                                 string          sourceFile,
                                 string          fnSearch, 
                                 FileFormat      fmt,
-                                TargetArch      t) :
+                                TargetArch      t,
+                                unsigned int    m) :
     /*execCode(getExecSections(fn, fmt, t)),*/
     codeProvider(new ExecCodeProvider(sourceFile, fmt, t)),
     visitor(v),
     tarch(t),
-    translatedBlocks(0)
+    translatedBlocks(0),
+    maxNumStatements(m)
 {
     this->totalBlocks = 0;
     TargetInfo  ti;
@@ -181,7 +187,7 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
     return;
 }
 
-list<BlockPtr> RopLibSearcher::decodeBlocks(void *c, secVT code, ostream &s) {
+list<BlockPtr> RopLibSearcher::decodeBlocks(void *c, secVT code, ostream &s, unsigned int maxNumStatements) {
     list<BlockPtr>  blocks;
     //we have a vector of executable code
     //translate this into a vector of BlockPtrs
@@ -208,6 +214,7 @@ list<BlockPtr> RopLibSearcher::decodeBlocks(void *c, secVT code, ostream &s) {
                                     bufLen-i,
                                     baseVA,
                                     arch,
+                                    maxNumStatements,
                                     b);
 
             if( r ) {
@@ -287,6 +294,7 @@ void RopLibSearcher::getBlocks(uint32_t count)
                             curBufLen-i,
                             baseVA,
                             tarch,
+                            this->maxNumStatements,
                             b);
 
     //we update this because we at least made an attempt at translation
@@ -340,6 +348,7 @@ void RopLibSearcher::getBlocks(void) {
                                     bufLen-i,
                                     baseVA,
                                     tarch,
+                                    this->maxNumStatements,
                                     b);
 
             if( r ) {
@@ -425,8 +434,9 @@ StatefulRopLibSearcher::StatefulRopLibSearcher( RopLibVisitorPtr   v,
                                                 string sourceFile, 
                                                 string f, 
                                                 FileFormat fmt, 
-                                                TargetArch arch) :
-                                   RopLibSearcher(v, sourceFile, f, fmt, arch) 
+                                                TargetArch arch,
+                                                unsigned int m) :
+                                   RopLibSearcher(v, sourceFile, f, fmt, arch, m) 
 {
     
     return;
@@ -435,8 +445,9 @@ StatefulRopLibSearcher::StatefulRopLibSearcher( RopLibVisitorPtr   v,
 StatefulRopLibSearcher::StatefulRopLibSearcher( RopLibVisitorPtr    v,
                                 list<BlockPtr>  blocks,
                                 void            *ctx,
-                                TargetArch      t) :
-                                RopLibSearcher(v, blocks, ctx, t)
+                                TargetArch      t,
+                                unsigned int    m) :
+                                RopLibSearcher(v, blocks, ctx, t, m)
 {
   return;
 }

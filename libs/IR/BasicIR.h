@@ -558,7 +558,8 @@ public:
 /* base class for Expression */
 class Expression : public boost::enable_shared_from_this<Expression> {
 public:
-	Expression(void) { return; }
+  bool  simplified;
+	Expression(void) : simplified(false) { return; }
 	virtual ~Expression(){ return; }
 	virtual std::string printExpr(void) { return ""; }
 	virtual bool isECond() { return false; }
