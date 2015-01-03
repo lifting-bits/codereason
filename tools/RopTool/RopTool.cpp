@@ -1,26 +1,18 @@
 #include <RopLib.h>
 #include <VEE.h>
 
-#include <llvm/MC/MCDisassembler.h>
-#include <llvm/MC/MCAsmInfo.h>
-#include <llvm/MC/MCInst.h>
-#include <llvm/MC/MCInstPrinter.h>
-#include <llvm/Support/TargetRegistry.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/MemoryObject.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/ADT/OwningPtr.h>
-
 #include <boost/program_options/config.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/options_description.hpp>
-
 #include <boost/regex.hpp>
+
+#include <capstone/capstone.h>
 
 using namespace boost;
 
+/*
 //for disassembling
 class BufferMemoryObject : public llvm::MemoryObject {
 private:
@@ -40,6 +32,7 @@ public:
         return 0;
     }
 };
+*/
 
 class BlankBlockProvider : public BlockProvider {
 public:
@@ -125,6 +118,7 @@ VisitorResult MatchesVEE::keepBlock(BlockPtr b) {
     return r;
 }
 
+/*
 static const llvm::Target *findDisTarget(std::string arch) {
     const llvm::Target  *tgt = NULL;
 
@@ -141,6 +135,7 @@ static const llvm::Target *findDisTarget(std::string arch) {
 
     return tgt;
 }
+*/
 
 //print progress
 static
@@ -166,6 +161,7 @@ void print_progress(unsigned int Total, unsigned int Done) {
     return;
 }
 
+/*
 std::string disAtVAInBuff(   uint8_t     *buff,
                         uint64_t    disVA,
                         uint32_t    disLen,
@@ -305,6 +301,7 @@ std::string disAtVAInBuff(   uint8_t     *buff,
 
     return r;
 }
+*/
 
 FileFormat fmtFromVM(program_options::variables_map &vm) {
     if( vm.count("pe") ) {
@@ -361,12 +358,12 @@ int main(int argc, char *argv[]) {
     Condition                               *cs;
     int                                     jumps;
     uint32_t                                bucketSize;
-
+/*
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmParsers();
     llvm::InitializeAllDisassemblers();
-
+*/
     d.add_options()
         ("version,v", "show version")
         ("help,h", "print help")
@@ -531,11 +528,11 @@ int main(int argc, char *argv[]) {
                     uint64_t    delta = blockBase-baseAddr;
                     uint8_t     *disBuf = buf+delta; 
                    
-                    std::string s = disAtVAInBuff(   disBuf, 
+                    std::string s = "";/*disAtVAInBuff(   disBuf, 
                                                 blockBase, 
                                                 blockLen, 
                                                 arch);
-
+                                    */
                     std::cout << s << std::endl;
                     break;
                 } else {

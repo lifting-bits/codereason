@@ -14,30 +14,10 @@ find_package(Protobuf REQUIRED)
 
 #find the place where VEX lives ... 
 find_path(VEX_INCLUDE_DIR libvex.h REQUIRED PATHS ./vexTRUNK/pub NO_DEFAULT_PATH)
-#find_path(LLVM_INC_DIR llvm/LLVMContext.h REQUIRED)
-IF(WIN32)
-    SET(LLVM_INC_DIR "c:\\LLVM\\include")
-    SET(LLVM_LIBS_RAW "LLVMCore.lib LLVMARMAsmParser.lib LLVMX86AsmParser.lib LLVMX86Disassembler.lib LLVMArmDesc.lib LLVMAsmParser.lib LLVMAsmPrinter.lib LLVMCodeGen.lib LLVMX86CodeGen.lib LLVMX86Desc.lib LLVMX86Utils.lib LLVMMCDisassembler.lib LLVMSupport.lib LLVMTarget.lib LLVMObject.lib LLVMX86AsmPrinter.lib LLVMMC.lib LLVMMCParser.lib LLVMARMCodeGen.lib LLVMARMInfo.lib LLVMARMAsmPrinter.lib LLVMX86Info.lib LLVMARMDisassembler.lib")
-    SET(LLVM_LIBDIR_RAW "c:\\LLVM\\lib")
-ELSE(WIN32)
-    execute_process(COMMAND "llvm-config" --includedir
-                    ERROR_QUIET
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                    OUTPUT_VARIABLE LLVM_INC_DIR)
-
-    execute_process(COMMAND "llvm-config" --libs
-                    ERROR_QUIET
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                    OUTPUT_VARIABLE LLVM_LIBS_RAW)
-    execute_process(COMMAND "llvm-config" --libdir
-                    ERROR_QUIET
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                OUTPUT_VARIABLE LLVM_LIBDIR_RAW)
-ENDIF(WIN32)
 
 include_directories(${VEX_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${LLVM_INC_DIR})
+#include_directories(${LLVM_INC_DIR})
 include_directories(${PROTOBUF_INCLUDE_DIR})
 
 IF(WIN32)

@@ -6,20 +6,23 @@ if [[ $EUID -ne 0 ]]; then
 fi
 echo "installing"
 
-sudo apt-get -y install build-essential g++ cmake libboost-dev libprotobuf-dev libprotobuf-lite7 libprotobuf7 libprotoc7 protobuf-compiler libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev
+sudo apt-get -y install build-essential gcc g++ make cmake libboost-dev libprotobuf-dev protobuf-compiler libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev
 
-cd llvm-3.2
-tar -xf llvm-3.2.src.tar.gz
-cd llvm-3.2.src/
-mkdir build
-cd build/
-cmake -DLLVM_REQUIRES_RTTI=1 -DCMAKE_BUILD_TYPE=RELEASE -DLLVM_TARGETS_TO_BUILD="X86;ARM" ..
-make -j2
-sudo make install
-cd ../../../vexTRUNK
+
+# make/install Capstone
+cd capstone-3.0
+tar -xf capstone-3.0.tgz
+cd capstone-3.0
+sudo ./make.sh install
+
+# make vex
+cd ../../vexTRUNK
 make
 cd ..
+
+# make CodeReason
 mkdir build
 cd build
 cmake ..
 make -j2
+

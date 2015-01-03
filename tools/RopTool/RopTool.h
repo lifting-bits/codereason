@@ -1,3 +1,5 @@
+/* apparently this isn't even used... */
+
 #include <getExec.h>
 #include <iostream>
 #include <string>
@@ -5,6 +7,7 @@
 #include <list>
 #include <VEE.h>
 #include <decodeLib.h>
+#include <inttypes.h>
 
 namespace udis {
 #include <udis86.h>
@@ -19,15 +22,7 @@ namespace udis {
 #include <boost/thread.hpp>
 #include <boost/regex.hpp>
 
-#include <llvm/MC/MCDisassembler.h>
-#include <llvm/MC/MCAsmInfo.h>
-#include <llvm/MC/MCInst.h>
-#include <llvm/MC/MCInstPrinter.h>
-#include <llvm/Support/TargetRegistry.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/MemoryObject.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/ADT/OwningPtr.h>
+#include <capstone/capstone.h>
 
 /*class SearchInstance : public boost::enable_shared_from_this<SearchInstance> {
 private:
