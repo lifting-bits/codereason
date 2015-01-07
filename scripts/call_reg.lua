@@ -6,6 +6,7 @@ function onPre(v)
     vee.putreg(v, ESI, 32, 80808080)
     vee.putreg(v, EDI, 32, 80808080)
     vee.putreg(v, EBP, 32, 80808080)
+    vee.putreg(v, ESP, 32, 40404040)
 end
 
 function onPost(v)

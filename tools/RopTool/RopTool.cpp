@@ -107,7 +107,7 @@ void print_progress(unsigned int Total, unsigned int Done) {
     unsigned int print = floor(pctDone * tdot);
 
     unsigned int i = 0;
-    std::cout << std::setprecision(5) << std::fixed << pctDone*100 << "[";
+    std::cout.width(9); std::cout << std::setprecision(5) << std::fixed << std::right << pctDone*100 << "[";
     for( ; i < print; i++ ) {
         std::cout << "=";
     }
@@ -318,10 +318,6 @@ int main(int argc, char *argv[]) {
     rls.getBlocks(bucketSize);
     
     //now, while we have searching to do, apply our search class
-    std::cerr << "searching ... " << std::endl;
-    uint64_t    cur = 1;
-    uint64_t    end = rls.getNumBlocks();
-
     while( rls.canSearch() ) 
     {
       if(rls.needsMoreBlocks())
@@ -333,9 +329,7 @@ int main(int argc, char *argv[]) {
         continue;
       }
 
-      print_progress(end, cur);
-      cur++;
-      //std::cout << cur << " " << end << std::endl;
+      print_progress(rls.getNumBlocks(), rls.getBlocksDone());
       rls.evalOneBlock();
     }
 
@@ -343,7 +337,6 @@ int main(int argc, char *argv[]) {
     std::cerr << "done searching!" << std::endl;
     std::list<std::list<BlockPtr> >  found = rls.getBlocksFound();
     std::cerr << "found " << found.size() << std::endl;
-
     csh handle;
     cs_insn * insn;
     size_t count;
@@ -407,7 +400,7 @@ int main(int argc, char *argv[]) {
                     {
                         //print instructions
                         for(size_t i = 0; i < count; i++)
-                            printf("0x%"PRIx64": %s\t%s\n", insn[i].address, insn[i].mnemonic, insn[i].op_str);
+                            printf("0x%llx: %s\t%s\n", insn[i].address, insn[i].mnemonic, insn[i].op_str);
                     
                         cs_free(insn, count);
                         good++;

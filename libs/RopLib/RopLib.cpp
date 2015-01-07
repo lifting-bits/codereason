@@ -78,10 +78,9 @@ RopLibSearcher::RopLibSearcher( string        sourceFile,
     list<string>    names = this->codeProvider->filenames();
     for( list<string>::iterator it = names.begin(); it != names.end(); ++it ) {
         string  curName = *it;
-
         if( regex_search(curName, sm, regexFilter) ) {
             secVT   tmp = this->codeProvider->sections_in_file(curName);
-
+            
             this->execCode.insert(this->execCode.end(), tmp.begin(), tmp.end());
         }
     }
@@ -261,8 +260,8 @@ bool RopLibSearcher::getBlocks(uint32_t count)
         {
           //figure out what the offset is
           ptrdiff_t delta = this->translatedBlocks - soFar;
-          curBuf = (buf + delta);
-          curBaseAddr = (baseAddr + delta);
+          curBuf = buf;
+          curBaseAddr = baseAddr;
           curBufLen = bufLen;
           start = delta;
           break;
@@ -279,7 +278,7 @@ bool RopLibSearcher::getBlocks(uint32_t count)
   }
   assert(start < curBufLen);
 
-  cout << "retreiving up to " << count << " blocks" << endl;
+  //cout << "retreiving up to " << count << " blocks" << endl;
   //now, go until we either run out of elts in the current buffer, or, 
   //we get up to count blocks
   uint32_t  blocksDone = 0;
@@ -292,7 +291,7 @@ bool RopLibSearcher::getBlocks(uint32_t count)
     if(blocksDone == count) {
       break;
     }
-    
+     
     r = convertToOneBlock(  this->decodeCtx,
                             c,
                             curBufLen-i,
@@ -315,10 +314,10 @@ bool RopLibSearcher::getBlocks(uint32_t count)
         this->totalBlocks--;
     }
 
-    print_progress(count, blocksDone, cout);
+    //print_progress(count, blocksDone, cout);
   }
 
-  cout << endl;
+  //cout << endl;
 
   return true;
 }
