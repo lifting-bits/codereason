@@ -1,6 +1,6 @@
 language: cpp
 cache: apt
-before_install: sudo ./install_deps.sh && cd capstone-3.0 && ./setup_capstone.sh 
+before_install: sudo ./install_deps.sh && cd capstone-3.0 && ./setup_capstone.sh && cd .. 
 install: cd vexTRUNK && make
 script: cd .. && mkdir build && cd build && cmake .. && make -j2
 compiler:
