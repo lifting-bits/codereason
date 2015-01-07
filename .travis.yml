@@ -1,6 +1,6 @@
 language: cpp
 cache: apt
-before_install: sudo apt-get update && sudo apt-get -y install libprotobuf-dev protobuf-compiler libboost-dev libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev
+before_install: sudo ./install_deps.sh && cd capstone-3.0 && ./setup_capstone.sh 
 install: cd vexTRUNK && make
 script: cd .. && mkdir build && cd build && cmake .. && make -j2
 compiler:
