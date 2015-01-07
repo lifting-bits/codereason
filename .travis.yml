@@ -1,15 +1,11 @@
 language: cpp
-before_install:
-- sudo apt-get -y install libprotobuf-dev protobuf-compiler
-- sudo apt-get -y install libboost-dev libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev
-install:
-- cd vexTRUNK && make
+cache: apt
+before_install: sudo apt-get update && sudo apt-get -y install libprotobuf-dev protobuf-compiler libboost-dev libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev
+install: cd vexTRUNK && make
 script: cd .. && mkdir build && cd build && cmake .. && make -j2
 compiler:
 - gcc
 - clang
-matrix:
-  allow_failures:
-    - compiler: clang
-cache:
-  apt: true
+notifications:
+  slack:
+    secure: bewLb+C2yiKmLUh0o/vftey+tl0XrmgkPi38uO+zbZ1kXJw/ByweJNrumgO/EJ4GDodb4cLHIUFuk4fNpkSUeV1CBSql7sm2cgQ9pIoQcdeEcANOeUmdepYwRh2xTOjRCeQnh0FYUkeyrQpzFwk1f+yybZrppw6dKu677v8CB1w=
