@@ -15,9 +15,13 @@ find_package(Protobuf REQUIRED)
 #find the place where VEX lives ... 
 find_path(VEX_INCLUDE_DIR libvex.h REQUIRED PATHS ./vexTRUNK/pub NO_DEFAULT_PATH)
 
+#define capstone's includes
+set(CAPSTONE_SRC_DIR "./capstone-3.0/capstone-3.0")
+#set(CAPSTONE_INC_DIR "${CAPSTONE_SRC_DIR}")
+
 include_directories(${VEX_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
-#include_directories(${LLVM_INC_DIR})
+#include_directories(${CAPSTONE_INC_DIR})
 include_directories(${PROTOBUF_INCLUDE_DIR})
 
 IF(WIN32)
@@ -25,6 +29,7 @@ IF(WIN32)
     find_library(VEX_LIB VEX.lib HINTS ./build_for_windows/lib32 NO_DEFAULT_PATH)
 ELSE(WIN32)
     find_library(VEX_LIB libvex.a HINTS ./vexTRUNK NO_DEFAULT_PATH)
+    find_library(CAPSTONE_LIB libcapstone.a HINTS ${CAPSTONE_SRC_DIR} NO_DEFAULT_PATH)
 ENDIF(WIN32)
 
 add_definitions(-D__i386__)

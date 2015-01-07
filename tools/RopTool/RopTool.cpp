@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <RopLib.h>
 #include <VEE.h>
 
@@ -11,28 +12,6 @@
 #include <capstone/capstone.h>
 
 using namespace boost;
-
-/*
-//for disassembling
-class BufferMemoryObject : public llvm::MemoryObject {
-private:
-    const uint8_t *Bytes;
-    uint64_t Length;
-public:
-    BufferMemoryObject(const uint8_t *bytes, uint64_t length) :
-        Bytes(bytes), Length(length) { }
-
-    uint64_t getBase() const { return 0; }
-    uint64_t getExtent() const { return Length; }
-
-    int readByte(uint64_t addr, uint8_t *byte) const {
-        if (addr > getExtent())
-            return -1;
-        *byte = Bytes[addr];
-        return 0;
-    }
-};
-*/
 
 class BlankBlockProvider : public BlockProvider {
 public:
@@ -118,25 +97,6 @@ VisitorResult MatchesVEE::keepBlock(BlockPtr b) {
     return r;
 }
 
-/*
-static const llvm::Target *findDisTarget(std::string arch) {
-    const llvm::Target  *tgt = NULL;
-
-    for(llvm::TargetRegistry::iterator  it = llvm::TargetRegistry::begin(),
-        ie = llvm::TargetRegistry::end();
-        it != ie;
-        ++it)
-    {
-        if( arch == it->getName() ) {
-            tgt = &*it;
-            break;
-        }
-    }
-
-    return tgt;
-}
-*/
-
 //print progress
 static
 void print_progress(unsigned int Total, unsigned int Done) {
@@ -161,148 +121,6 @@ void print_progress(unsigned int Total, unsigned int Done) {
     return;
 }
 
-/*
-std::string disAtVAInBuff(   uint8_t     *buff,
-                        uint64_t    disVA,
-                        uint32_t    disLen,
-                        TargetArch  tarch)
-{
-    std::string r = "";
-
-    assert(tarch.ta == X86 || tarch.ta == AMD64 || tarch.ta == ARM);
-
-    const llvm::Target          *t = NULL;
-    const llvm::MCSubtargetInfo *STI = NULL;
-    const llvm::MCAsmInfo       *AsmInfo = NULL;
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >=2)
-    llvm::MCRegisterInfo        *MRI = NULL;
-    const llvm::MCInstrInfo     *MCII = NULL;
-#endif
-
-    switch(tarch.ta) {
-        case X86:
-            t = findDisTarget("x86");
-            assert( t != NULL );
-            STI = t->createMCSubtargetInfo("i386-unknown-linux-gnu", "", "");
-            AsmInfo = t->createMCAsmInfo("i386-unknown-linux-gnu");
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-            MRI = t->createMCRegInfo("i386-unknown-linux-gnu");
-#endif
-            break;
-        
-        case AMD64:
-            t = findDisTarget("x86-64");
-            assert( t != NULL );
-            STI = t->createMCSubtargetInfo("amd64-unknown-linux-gnu", "", "");
-            AsmInfo = t->createMCAsmInfo("amd64-unknown-linux-gnu");
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-            MRI = t->createMCRegInfo("amd64-unknown-linux-gnu");
-#endif
-            break;
-
-        case ARM:
-            switch(tarch.tm) {
-                case THUMB:
-                    t = findDisTarget("thumb");
-                    assert( t != NULL );
-                    STI = 
-                       t->createMCSubtargetInfo("i386-unknown-linux-gnu","","");
-                    AsmInfo = t->createMCAsmInfo("i386-unknown-linux-gnu");
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-                    MRI = t->createMCRegInfo("i386-unknown-linux-gnu");
-#endif
-                    break;
-
-                case WIDEARM:
-                    t = findDisTarget("arm");
-                    assert( t != NULL );
-                    STI = 
-                       t->createMCSubtargetInfo("i386-unknown-linux-gnu","","");
-                    AsmInfo = t->createMCAsmInfo("i386-unknown-linux-gnu");
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-                    MRI = t->createMCRegInfo("i386-unknown-linux-gnu");
-#endif
-                    break;
-                case S_INVALID:
-                    assert(!"Invalid subarch!");
-                    break;
-            }
-            break;
-
-        default:
-            assert(!"NIY");
-    }
-
-    assert(t);
-    assert(STI);
-    assert(AsmInfo);
-
-    //make a printer object
-    int APV = AsmInfo->getAssemblerDialect();
-#ifndef LLVM_VERSION_MAJOR
-    llvm::MCInstPrinter
-        *IP = t->createMCInstPrinter(APV, *AsmInfo, *STI);
-#endif
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-    MCII = t->createMCInstrInfo();
-    llvm::MCInstPrinter
-        *IP = t->createMCInstPrinter(1, *AsmInfo, *MCII, *MRI, *STI);
-#endif
-
-    assert( IP );
-    //make a disassembler
-    const llvm::MCDisassembler *DisAsm = t->createMCDisassembler(*STI);
-    assert( DisAsm );
-
-    //describe the buffer
-    BufferMemoryObject  bmo(buff, disLen);
-
-    //do the decode
-    uint64_t    Size;
-    uint64_t    Index;
-
-    for( Index = 0; Index < disLen; Index += Size ) { 
-        llvm::MCInst  inst;
-        llvm::MCDisassembler::DecodeStatus  s;
-        bool                                br=false;
-        std::string                              outS;
-        llvm::raw_string_ostream            osOut(outS);
-
-        s = DisAsm->getInstruction( inst,
-                                    Size,
-                                    bmo,
-                                    Index,
-                                    llvm::nulls(),
-                                    llvm::nulls());
-        switch(s) {
-            case llvm::MCDisassembler::Success:
-                //print the bytes 
-                for(uint64_t k = 0; k < Size; k++)
-                {
-                    uint32_t    bfr;
-                    uint8_t     bt;
-                    bmo.readByte(Index+k, &bt);
-                    bfr = bt;
-                    r = r + to_string<uint32_t>(bfr, std::hex) + " ";
-                }
-                //print the instruction
-                IP->printInst(&inst, osOut, "");
-                r = r + osOut.str() + "\n";
-                break;
-            default:
-                std::cout << "decode failed" << std::endl;
-                br = true;
-        }
-
-        if( br ) {
-            break;
-        }
-    }
-
-    return r;
-}
-*/
-
 FileFormat fmtFromVM(program_options::variables_map &vm) {
     if( vm.count("pe") ) {
         return PEFmt;
@@ -321,6 +139,41 @@ FileFormat fmtFromVM(program_options::variables_map &vm) {
     }
 
     return Invalid;
+}
+
+/* computes mode flags for Capstone */
+cs_mode archToCapstoneMode(TargetArch tarch)
+{
+    cs_mode mode = (cs_mode)-1;
+
+    if( tarch.ta == X86 )
+        mode = CS_MODE_32;
+    else if( tarch.ta == AMD64 )
+        mode = CS_MODE_64;
+    else if( tarch.ta == ARM )
+    {
+        if( tarch.tm == WIDEARM )
+            mode = CS_MODE_ARM;
+        else if( tarch.tm == THUMB )
+            mode = CS_MODE_THUMB;
+    }
+
+    // possible to add support for capstone endianess/extra modes here
+
+    return mode;
+}
+
+/* translates TargetArch for Capstone */
+cs_arch archToCapstone(TargetArch tarch)
+{
+    cs_arch carch = (cs_arch)-1;
+
+    if( tarch.ta == X86 || tarch.ta == AMD64 )
+        carch = CS_ARCH_X86;
+    else if( tarch.ta == ARM )
+        carch = CS_ARCH_ARM;
+    
+    return carch;     
 }
 
 TargetArch archFromVM(program_options::variables_map &vm) {
@@ -359,12 +212,7 @@ int main(int argc, char *argv[]) {
     int                                     jumps;
     unsigned int                            maxSize;
     uint32_t                                bucketSize;
-/*
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllDisassemblers();
-*/
+    
     d.add_options()
         ("version,v", "show version")
         ("help,h", "print help")
@@ -466,7 +314,7 @@ int main(int argc, char *argv[]) {
 
     //initialize with some blocks
     //std::cerr << "building blocks..." << std::endl;
-    
+
     rls.getBlocks(bucketSize);
     
     //now, while we have searching to do, apply our search class
@@ -492,12 +340,24 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << std::endl;
-
-    std::cerr << "done searching " << std::endl;
-
+    std::cerr << "done searching!" << std::endl;
     std::list<std::list<BlockPtr> >  found = rls.getBlocksFound();
-
     std::cerr << "found " << found.size() << std::endl;
+
+    csh handle;
+    cs_insn * insn;
+    size_t count;
+
+    // init the capstone engine
+    if(cs_open( archToCapstone(ta), archToCapstoneMode(ta), &handle) != CS_ERR_OK)
+    {
+       std::cerr << "Failed to initialize the Capstone Engine" << std::endl;
+       std::cerr << "Capstone Error: " << cs_strerror(cs_errno(handle));
+       return 0;
+    }
+
+    int error = 0;
+    int good = 0;
 
     for(std::list<std::list<BlockPtr> >::iterator tit = found.begin(); 
         tit != found.end(); 
@@ -505,8 +365,8 @@ int main(int argc, char *argv[]) {
     {
         std::list<BlockPtr>  thisTrace = *tit;
         
-        std::cout << "trace len: " << thisTrace.size() << std::endl;
-        for(std::list<BlockPtr>::iterator   it = thisTrace.begin();
+        //std::cout << "trace len: " << thisTrace.size() << std::endl;
+        for(std::list<BlockPtr>::iterator it = thisTrace.begin();
             it != thisTrace.end();
             ++it)
         {
@@ -516,7 +376,9 @@ int main(int argc, char *argv[]) {
             uint64_t    blockBase = b->getBlockBase();
             uint64_t    blockLen = b->getBlockLen();
 
-            std::cout << std::hex << addr << std::dec << std::endl;
+            //print gadget address
+            //std::cout << std::hex << addr << std::dec << std::endl;
+            
             //disassemble the buffer
             for(secVT::iterator sit = sectionsToSearch.begin();
                 sit != sectionsToSearch.end();
@@ -532,29 +394,46 @@ int main(int argc, char *argv[]) {
 
                 //does this section have that VA?
                 if( ((blockBase >= baseAddr) &&
-                    (blockBase < (baseAddr+bufLen)) ) &&
-                                ((blockBase+blockLen <= (baseAddr+bufLen)) ) )
+                    (blockBase < (baseAddr+bufLen))) &&
+                    ((blockBase+blockLen <= (baseAddr+bufLen))) )
                 {
                     //it does, print the disassembly and leave
                     uint64_t    delta = blockBase-baseAddr;
                     uint8_t     *disBuf = buf+delta; 
                    
-                    std::string s = "";/*disAtVAInBuff(   disBuf, 
-                                                blockBase, 
-                                                blockLen, 
-                                                arch);
-                                    */
-                    std::cout << s << std::endl;
+                    //send buffer to capstone for disassembly
+                    count = cs_disasm(handle, disBuf, blockLen, blockBase, 0, &insn); 
+                    if(count > 0)
+                    {
+                        //print instructions
+                        for(size_t i = 0; i < count; i++)
+                            printf("0x%"PRIx64": %s\t%s\n", insn[i].address, insn[i].mnemonic, insn[i].op_str);
+                    
+                        cs_free(insn, count);
+                        good++;
+                    }
+                    else
+                    {
+                        printf("ERROR: Could not disassemble given code!\n");
+                        error++;
+                    }
+
                     break;
+                
                 } else {
                     std::cout << "ERR: VA " << std::hex << blockBase;
                     std::cout << " - " << blockBase+blockLen << std::dec;
                     std::cout << " not in maps" << std::endl;
+                    error++;
                 }
             }
         }
         std::cout << " --------- " << std::endl;
     }
-
+    
+    // TODO: figure out where these errors are coming from
+    printf("good: %u - errors: %u\n", good, error);
+    
+    
     return 0;
 }
