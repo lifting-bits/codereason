@@ -121,7 +121,6 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
                                 FileFormat      fmt,
                                 TargetArch      t,
                                 unsigned int    m) :
-    /*execCode(getExecSections(fn, fmt, t)),*/
     codeProvider(new ExecCodeProvider(sourceFile, fmt, t)),
     visitor(v),
     tarch(t),

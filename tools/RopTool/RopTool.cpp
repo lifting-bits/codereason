@@ -121,26 +121,6 @@ void print_progress(unsigned int Total, unsigned int Done) {
     return;
 }
 
-FileFormat fmtFromVM(program_options::variables_map &vm) {
-    if( vm.count("pe") ) {
-        return PEFmt;
-    }
-
-    if( vm.count("mach") ) {
-        return MachOFmt;
-    }
-
-    if( vm.count("raw") ) {
-        return RawFmt;
-    }
-
-    if( vm.count("ucache") ) {
-        return DyldCacheFmt;
-    }
-
-    return Invalid;
-}
-
 /* computes mode flags for Capstone */
 cs_mode archToCapstoneMode(TargetArch tarch)
 {
@@ -176,6 +156,7 @@ cs_arch archToCapstone(TargetArch tarch)
     return carch;     
 }
 
+/* TODO: remove/move to getExec lib */
 TargetArch archFromVM(program_options::variables_map &vm) {
     TargetArch  tarch;
 
@@ -204,7 +185,6 @@ int main(int argc, char *argv[]) {
     program_options::options_description    d("options");    
     program_options::variables_map          vm;
     TargetArch                              ta;
-    FileFormat                              fmt;
     std::string                             inputFile;
     std::string                             filesToSearch;
     std::string                             dbOutFile;
@@ -216,10 +196,6 @@ int main(int argc, char *argv[]) {
     d.add_options()
         ("version,v", "show version")
         ("help,h", "print help")
-        ("pe", "is a PE file")
-        ("mach", "is a mach file")
-        ("ucache", "is a dyld cache")
-        ("raw", "is a raw file")
         ("db", "is a DB file")
         ("block-size,n", program_options::value<unsigned int>(), "max size in statements of blocks to search")
         ("search-files,s", program_options::value<std::string>(), "files in input to search")
@@ -265,19 +241,14 @@ int main(int argc, char *argv[]) {
     }
     
     ta = archFromVM(vm);
-    fmt = fmtFromVM(vm);
 
-    if( fmt == Invalid ) {
-        std::cout << "Must specify a format" << std::endl;
-        std::cout << d << std::endl;
-        return 0;
-    }
-
+    /*
     if( fmt == MachOFmt && ta.ta == INVALID ) {
         std::cout << "Must specify an architecture for mach-o objects" << std::endl;
         std::cout << d << std::endl;
         return 0;
     }
+    */
 
     if( vm.count("jumps") ) { 
         jumps = vm["jumps"].as<int>();
@@ -285,6 +256,7 @@ int main(int argc, char *argv[]) {
         jumps = 1;
     }
 
+    // get the input binary filename
     if( vm.count("in-file") ) {
         inputFile = vm["in-file"].as<std::string>();
     } else {
@@ -293,6 +265,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    // load the lua conditions script
     if( vm.count("conditions") ) {
         cs = getConditionsFromFile(vm["conditions"].as<std::string>(), ta);
         assert(cs != NULL);
@@ -310,7 +283,8 @@ int main(int argc, char *argv[]) {
     RopLibVisitorPtr    mvee(new MatchesVEE(cs, jumps));
 
     //construct a searcher class 
-    RopLibSearcher  rls(mvee, inputFile, filesToSearch, fmt, ta, maxSize);
+        //send a placehold 'fmt' for now (Invalid)
+    RopLibSearcher  rls(mvee, inputFile, filesToSearch, Invalid, ta, maxSize);
 
     //initialize with some blocks
     //std::cerr << "building blocks..." << std::endl;
@@ -337,6 +311,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "done searching!" << std::endl;
     std::list<std::list<BlockPtr> >  found = rls.getBlocksFound();
     std::cerr << "found " << found.size() << std::endl;
+   
     csh handle;
     cs_insn * insn;
     size_t count;
@@ -407,16 +382,16 @@ int main(int argc, char *argv[]) {
                     }
                     else
                     {
-                        printf("ERROR: Could not disassemble given code!\n");
+                        std::cerr << "ERROR: Could not disassemble given code!" << std::endl;
                         error++;
                     }
 
                     break;
                 
                 } else {
-                    std::cout << "ERR: VA " << std::hex << blockBase;
-                    std::cout << " - " << blockBase+blockLen << std::dec;
-                    std::cout << " not in maps" << std::endl;
+                    std::cerr << "ERR: VA " << std::hex << blockBase;
+                    std::cerr << " - " << blockBase+blockLen << std::dec;
+                    std::cerr << " not in maps" << std::endl;
                     error++;
                 }
             }

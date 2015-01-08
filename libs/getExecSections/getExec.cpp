@@ -477,7 +477,6 @@ secVT getExecSections(std::string path, FileFormat f, TargetArch t) {
 }
 
 ExecCodeProvider::ExecCodeProvider(std::string p, FileFormat f, TargetArch t) {
-    this->fmt = f;
     this->arch = t;
     this->err = false;
     this->buf = NULL;
@@ -486,9 +485,50 @@ ExecCodeProvider::ExecCodeProvider(std::string p, FileFormat f, TargetArch t) {
     this->peCtx = NULL;
     this->dyldCtx = NULL;
 
-    switch(f) {
-        case DyldCacheFmt:
-        {
+    // open and map the executable
+    FILE *fp = fopen(p.c_str(), "rb");
+    if( fp ) {
+        uint32_t    len;
+        fseek(fp, 0L, SEEK_END);
+        len = ftell(fp);
+        fseek(fp, 0L, SEEK_SET);
+        uint8_t	*fileBuf = memMapFile(fp, len, 0);
+        assert(fileBuf != NULL);
+        this->buf = fileBuf;
+        this->bufLen = len;
+    }
+
+    std::cout << "Executable Type: ";
+    
+    // Windows Executable
+    if(memcmp(this->buf, "MZ\x90\x00", 4) == 0)
+    {
+        std::cout << "Windows Executable" << std::endl;
+        this->fmt = PEFmt;
+        this->peCtx = PeLib::openPeFile(p);
+    }
+    
+    // ELF's
+    else if(memcmp(this->buf, "\x7f\x45\x4c\x46", 4) == 0)
+    {
+        std::cout << "Linux ELF" << std::endl;
+        this->fmt = ELFFmt;
+    }
+
+    // MachO's
+    else if((memcmp(this->buf, "\xce\xfa\xed\xfe", 4) == 0) || 
+            (memcmp(this->buf, "\xcf\xfa\xed\xfe", 4) == 0))
+    {
+        std::cout << "MachO Executable" << std::endl;
+        this->fmt = MachOFmt;
+    }
+    
+    // DynLib's
+    else if(memcmp(this->buf, "\xca\xfe\xba\xbe", 4) == 0)
+    {
+        std::cout << "Mac Dynlib" << std::endl;
+        this->fmt = DyldCacheFmt;
+
 #ifndef WIN32
             dyld_decache::ProgramContext *dy = 
                 new dyld_decache::ProgramContext(p);
@@ -500,60 +540,14 @@ ExecCodeProvider::ExecCodeProvider(std::string p, FileFormat f, TargetArch t) {
                 this->err = true;
             }
 #endif
-        }
-            break;
 
-        case PEFmt:
-        {
-            this->peCtx = PeLib::openPeFile(p);
-            FILE *f = fopen(p.c_str(), "rb");
-            if( f ) {
-                uint32_t    len;
-                fseek(f, 0L, SEEK_END);
-                len = ftell(f);
-                fseek(f, 0L, SEEK_SET);
-                uint8_t	*fileBuf = memMapFile(f, len, 0);
-                assert(fileBuf != NULL);
-                this->buf = fileBuf;
-                this->bufLen = len;
-            }
-        } 
-            break;
+    }
 
-        case MachOFmt:
-        {
-            FILE *f = fopen(p.c_str(), "rb");
-            if( f ) {
-                uint32_t    len;
-                fseek(f, 0L, SEEK_END);
-                len = ftell(f);
-                fseek(f, 0L, SEEK_SET);
-                uint8_t	*fileBuf = memMapFile(f, len, 0);
-                assert(fileBuf != NULL);
-                this->buf = fileBuf;
-                this->bufLen = len;
-            }
-        } 
-            break;
-
-        case RawFmt:
-        {
-            FILE *f = fopen(p.c_str(), "rb");
-            if( f ) {
-                uint32_t    len;
-                fseek(f, 0L, SEEK_END);
-                len = ftell(f);
-                fseek(f, 0L, SEEK_SET);
-                uint8_t	*fileBuf = memMapFile(f, len, 0);
-                assert(fileBuf != NULL);
-                this->buf = fileBuf;
-                this->bufLen = len;
-            }
-        } 
-            break;
-
-        case Invalid:
-            break;
+    // handle unrecognized binaries
+    else
+    {
+        std::cout << "Unrecognized Binary" << std::endl;
+        this->fmt = RawFmt; // or Invalid
     }
 
     return;

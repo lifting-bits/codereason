@@ -7,6 +7,7 @@
 enum FileFormat {
     Invalid,
     PEFmt,
+    ELFFmt,
     MachOFmt,
     RawFmt,
     DyldCacheFmt
