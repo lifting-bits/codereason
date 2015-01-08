@@ -8,10 +8,6 @@
 #include <RopLib.h>
 #include <ExprParser.h>
 
-namespace udis {
-#include <udis86.h>
-}
-
 #include <boost/program_options/config.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -22,39 +18,9 @@ namespace udis {
 #include <boost/thread.hpp>
 #include <boost/regex.hpp>
 
-#include <llvm/MC/MCDisassembler.h>
-#include <llvm/MC/MCAsmInfo.h>
-#include <llvm/MC/MCInst.h>
-#include <llvm/MC/MCInstPrinter.h>
-#include <llvm/Support/TargetRegistry.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/MemoryObject.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/ADT/OwningPtr.h>
-
 using namespace boost;
 using namespace boost::program_options;
 using namespace std;
-
-//for disassembling
-class BufferMemoryObject : public llvm::MemoryObject {
-private:
-    const uint8_t *Bytes;
-    uint64_t Length;
-public:
-    BufferMemoryObject(const uint8_t *bytes, uint64_t length) :
-        Bytes(bytes), Length(length) { }
-
-    uint64_t getBase() const { return 0; }
-    uint64_t getExtent() const { return Length; }
-
-    int readByte(uint64_t addr, uint8_t *byte) const {
-        if (addr > getExtent())
-            return -1;
-        *byte = Bytes[addr];
-        return 0;
-    }
-};
 
 class BlankBlockProvider : public BlockProvider {
 public:
@@ -789,165 +755,6 @@ TargetArch archFromVM(program_options::variables_map &vm) {
     return tarch;
 }
 
-static const llvm::Target *findDisTarget(std::string arch) {
-    const llvm::Target  *tgt = NULL;
-
-    for(llvm::TargetRegistry::iterator  it = llvm::TargetRegistry::begin(),
-        ie = llvm::TargetRegistry::end();
-        it != ie;
-        ++it)
-    {   
-        if( arch == it->getName() ) {
-            tgt = &*it;
-            break;
-        }
-    }
-
-    return tgt;
-}
-
-std::string disAtVAInBuff(   uint8_t     *buff,
-                        uint64_t    disVA,
-                        uint32_t    disLen,
-                        TargetArch  tarch)
-{
-    std::string r = "";
-
-    assert(tarch.ta == X86 || tarch.ta == AMD64 || tarch.ta == ARM);
-
-    const llvm::Target          *t = NULL;
-    const llvm::MCSubtargetInfo *STI = NULL;
-    const llvm::MCAsmInfo       *AsmInfo = NULL;
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >=2)
-    llvm::MCRegisterInfo        *MRI = NULL;
-    const llvm::MCInstrInfo     *MCII = NULL;
-#endif
-
-    switch(tarch.ta) {
-        case X86:
-            t = findDisTarget("x86");
-            assert( t != NULL );
-            STI = t->createMCSubtargetInfo("i386-unknown-linux-gnu", "", "");
-            AsmInfo = t->createMCAsmInfo("i386-unknown-linux-gnu");
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-            MRI = t->createMCRegInfo("i386-unknown-linux-gnu");
-#endif
-            break;
-
-        case AMD64:
-            t = findDisTarget("x86-64");
-            assert( t != NULL );
-            STI = t->createMCSubtargetInfo("amd64-unknown-linux-gnu", "", "");
-            AsmInfo = t->createMCAsmInfo("amd64-unknown-linux-gnu");
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-            MRI = t->createMCRegInfo("amd64-unknown-linux-gnu");
-#endif
-            break;
-
-        case ARM:
-            switch(tarch.tm) {
-                case THUMB:
-                    t = findDisTarget("thumb");
-                    assert( t != NULL );
-                    STI =
-                       t->createMCSubtargetInfo("i386-unknown-linux-gnu","","");
-                    AsmInfo = t->createMCAsmInfo("i386-unknown-linux-gnu");
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-                    MRI = t->createMCRegInfo("i386-unknown-linux-gnu");
-#endif
-                    break;
-
-                case WIDEARM:
-                    t = findDisTarget("arm");
-                    assert( t != NULL );
-                    STI =
-                       t->createMCSubtargetInfo("i386-unknown-linux-gnu","","");
-                    AsmInfo = t->createMCAsmInfo("i386-unknown-linux-gnu");
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-                    MRI = t->createMCRegInfo("i386-unknown-linux-gnu");
-#endif
-                    break;
-                case S_INVALID:
-                    assert(!"Invalid subarch!");
-                    break;
-            }
-            break;
-
-        default:
-            assert(!"NIY");
-    }
-
-    assert(t);
-    assert(STI);
-    assert(AsmInfo);
-
-    //make a printer object
-    int APV = AsmInfo->getAssemblerDialect();
-#ifndef LLVM_VERSION_MAJOR
-    llvm::MCInstPrinter
-        *IP = t->createMCInstPrinter(APV, *AsmInfo, *STI);
-#endif
-#if(LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 2)
-    MCII = t->createMCInstrInfo();
-    llvm::MCInstPrinter
-        *IP = t->createMCInstPrinter(1, *AsmInfo, *MCII, *MRI, *STI);
-#endif
-
-    assert( IP );
-    //make a disassembler
-    const llvm::MCDisassembler *DisAsm = t->createMCDisassembler(*STI);
-    assert( DisAsm );
-
-    //describe the buffer
-    BufferMemoryObject  bmo(buff, disLen);
-
-    //do the decode
-    uint64_t    Size;
-    uint64_t    Index;
-
-    for( Index = 0; Index < disLen; Index += Size ) {
-        llvm::MCInst  inst;
-        llvm::MCDisassembler::DecodeStatus  s;
-        bool                                br=false;
-        std::string                              outS;
-        llvm::raw_string_ostream            osOut(outS);
-
-        s = DisAsm->getInstruction( inst,
-                                    Size,
-                                    bmo,
-                                    Index,
-                                    llvm::nulls(),
-                                    llvm::nulls());
-
-        switch(s) {
-            case llvm::MCDisassembler::Success:
-                //print the bytes 
-                for(uint64_t k = 0; k < Size; k++)
-                {   
-                    uint32_t    bfr;
-                    uint8_t     bt;
-                    bmo.readByte(Index+k, &bt);
-                    bfr = bt;
-                    r = r + to_string<uint32_t>(bfr, std::hex) + " ";
-                }
-                //print the instruction
-                IP->printInst(&inst, osOut, "");
-                r = r + osOut.str() + "\n";
-                break;
-            default:
-                std::cout << "decode failed" << std::endl;
-                br = true;
-        }
-
-        if( br ) {
-            break;
-        }
-    }
-
-    return r;
-}
-
-
 void printScoring(  vector<pair<string, RopLibSearcherPtr> >    p, 
                     ostream                                     &o,
                     uint64_t                                    lowAddr,
@@ -1014,7 +821,8 @@ void printScoring(  vector<pair<string, RopLibSearcherPtr> >    p,
                   uint64_t  delta = blockBase-baseAddr;
                   uint8_t   *disBuf = buf+delta;
 
-                  string  s = disAtVAInBuff(disBuf, blockBase, blockLen, arch);
+                  //TODO: re-implement with Capstone disassembly?
+                  string  s = "";
                   if(printDecode)
                     cout << s << endl << endl;
                 }
@@ -1046,10 +854,12 @@ int main(int argc, char *argv[])
     options_description d("options");
     variables_map       vm;
 
+    /*
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmParsers();
     llvm::InitializeAllDisassemblers();
+    */
 
     d.add_options()
         ("version,v", "show version")
@@ -1130,8 +940,7 @@ int main(int argc, char *argv[])
     }
 
     /* get blocks for the section we're scoring, this involves decoding */
-    list<BlockPtr>  blocks = 
-        RopLibSearcher::decodeBlocks(decodeCtx, execCode, cout);
+    list<BlockPtr>  blocks = RopLibSearcher::decodeBlocks(decodeCtx, execCode, cout, 25);
 
     /* make a searcher for every condition or input we have */
     vector<pair<string, RopLibSearcherPtr> >    searchers;
@@ -1163,12 +972,9 @@ int main(int argc, char *argv[])
 
         RopLibSearcherPtr   s;
         if(vm.count("do-multi-gadget"))
-          s = RopLibSearcherPtr(new StatefulRopLibSearcher( rv, 
-                                                            blocks, 
-                                                            decodeCtx, 
-                                                            ta));
+          s = RopLibSearcherPtr(new StatefulRopLibSearcher( rv, blocks, decodeCtx, ta, 25));
         else
-          s = RopLibSearcherPtr(new RopLibSearcher(rv, blocks, decodeCtx, ta));
+          s = RopLibSearcherPtr(new RopLibSearcher(rv, blocks, decodeCtx, ta, 25));
 
         pair<string, RopLibSearcherPtr> k(input, s);
         searchers.push_back(k);
@@ -1192,8 +998,7 @@ int main(int argc, char *argv[])
           }
 
           RopLibVisitorPtr    rv(new MatchesVEE(cs, 4));
-          RopLibSearcherPtr   s(
-              new RopLibSearcher(rv, blocks, decodeCtx, ta));
+          RopLibSearcherPtr   s(new RopLibSearcher(rv, blocks, decodeCtx, ta, 25));
           pair<string, RopLibSearcherPtr> k(input, s);
           searchers.push_back(k);
       }
