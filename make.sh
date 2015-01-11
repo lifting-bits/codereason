@@ -3,9 +3,16 @@
 # make Capstone
 cd capstone-3.0
 ./setup_capstone.sh
+cd ..
+
+# make pe-parse
+cd libs/pe-parse
+cmake .
+make
+cd ../../
 
 # make vex
-cd ../../vexTRUNK
+cd vexTRUNK
 make
 cd ..
 

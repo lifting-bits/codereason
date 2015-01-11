@@ -17,11 +17,10 @@ find_path(VEX_INCLUDE_DIR libvex.h REQUIRED PATHS ./vexTRUNK/pub NO_DEFAULT_PATH
 
 #define capstone's includes
 set(CAPSTONE_SRC_DIR "./capstone-3.0/capstone-3.0")
-#set(CAPSTONE_INC_DIR "${CAPSTONE_SRC_DIR}")
+set(PE-PARSE_SRC_DIR "./libs/pe-parse/parser-library")
 
 include_directories(${VEX_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
-#include_directories(${CAPSTONE_INC_DIR})
 include_directories(${PROTOBUF_INCLUDE_DIR})
 
 IF(WIN32)
@@ -30,6 +29,7 @@ IF(WIN32)
 ELSE(WIN32)
     find_library(VEX_LIB libvex.a HINTS ./vexTRUNK NO_DEFAULT_PATH)
     find_library(CAPSTONE_LIB libcapstone.a HINTS ${CAPSTONE_SRC_DIR} NO_DEFAULT_PATH)
+    find_library(PE-PARSE_LIB libpe-parser-library.a HINTS ${PE-PARSE_SRC_DIR} NO_DEFAULT_PATH)
 ENDIF(WIN32)
 
 add_definitions(-D__i386__)

@@ -69,30 +69,23 @@ protected:
     ExecCodeProviderPtr                 codeProvider;
     unsigned int                        maxNumStatements;
 public:
-    RopLibSearcher(std::string sourceFile, std::string f, FileFormat fmt, TargetArch t, unsigned int m);
-    RopLibSearcher(RopLibVisitorPtr v, std::string sourceFile, std::string f, FileFormat fmt, TargetArch t, unsigned int m);
+    RopLibSearcher(ExecCodeProvider * codeProvider, std::string f, FileFormat fmt, TargetArch t, unsigned int m);
+    RopLibSearcher(RopLibVisitorPtr v, ExecCodeProvider * codeProvider, std::string f, FileFormat fmt, TargetArch t, unsigned int m);
     RopLibSearcher(RopLibVisitorPtr v, std::list<BlockPtr>, void *, TargetArch, unsigned int m);
 
     boost::uint64_t getNumBlocks(void) { return this->totalBlocks; }
-
     boost::uint64_t getBlocksDone(void) { return this->evaluatedBlocks; }
-
     boost::uint64_t getBlocksLeft(void) { 
       return this->totalBlocks-this->evaluatedBlocks;
     }
-
+    
     bool needsMoreBlocks(void) { return this->decodedBlocks.size() == 0; }
-
     bool canSearch(void) { return this->totalBlocks != this->evaluatedBlocks; }
-
     std::list<BlockPtr> getDecodedBlocks(void) { return this->decodedBlocks; }
-
     void getBlocks(void);
-
     bool getBlocks(boost::uint32_t blockCount);
-
     virtual void evalOneBlock(void);
-
+    
     std::list<std::list<BlockPtr> > getBlocksFound(void) 
         { return this->foundBlocks; }
 
@@ -121,7 +114,7 @@ class StatefulRopLibSearcher : public RopLibSearcher {
 private:
     
 public:
-    StatefulRopLibSearcher(RopLibVisitorPtr, std::string, std::string, FileFormat, TargetArch, unsigned int);
+    StatefulRopLibSearcher(RopLibVisitorPtr, ExecCodeProvider *, std::string, FileFormat, TargetArch, unsigned int);
     StatefulRopLibSearcher(RopLibVisitorPtr, std::list<BlockPtr>, void *, TargetArch, unsigned int);
     virtual void evalOneBlock();
 };

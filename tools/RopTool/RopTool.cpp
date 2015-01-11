@@ -156,26 +156,30 @@ cs_arch archToCapstone(TargetArch tarch)
     return carch;     
 }
 
-/* TODO: remove/move to getExec lib */
+// parses the arch from the variable map, autodetect if not set
 TargetArch archFromVM(program_options::variables_map &vm) {
     TargetArch  tarch;
 
-    tarch.ta = INVALID;
-    
-    if( vm.count("architecture") ) {
-        std::string archStr = vm["architecture"].as<std::string>();
-
-        if( archStr == "X86" ) {
+    if( vm.count("arch") ) {
+        std::string archStr = vm["arch"].as<std::string>();
+        std::transform(archStr.begin(), archStr.end(), archStr.begin(), ::tolower);
+        
+        if( archStr  == "x86" ) {
             tarch.ta = X86;
-        } else if( archStr == "AMD64" ) {
+        } else if( archStr == "x64" ) {
             tarch.ta = AMD64;
-        } else if( archStr == "ARM" ) {
+        } else if( archStr == "arm" ) {
             tarch.ta = ARM;
             tarch.tm = WIDEARM;
-        } else if( archStr == "ARM-THUMB") {
+        } else if( archStr == "thumb") {
             tarch.ta = ARM;
             tarch.tm = THUMB;
-        } 
+        } else {
+            tarch.ta = INVALID;
+        }
+
+    } else {
+        tarch.ta = AUTODETECT;
     }
 
     return tarch;
@@ -185,6 +189,7 @@ int main(int argc, char *argv[]) {
     program_options::options_description    d("options");    
     program_options::variables_map          vm;
     TargetArch                              ta;
+    ExecCodeProvider*                       codeProvider;
     std::string                             inputFile;
     std::string                             filesToSearch;
     std::string                             dbOutFile;
@@ -192,26 +197,25 @@ int main(int argc, char *argv[]) {
     int                                     jumps;
     unsigned int                            maxSize;
     uint32_t                                bucketSize;
+    unsigned int                            good;
+    unsigned int                            error;
     
     d.add_options()
-        ("version,v", "show version")
         ("help,h", "print help")
-        ("db", "is a DB file")
-        ("block-size,n", program_options::value<unsigned int>(), "max size in statements of blocks to search")
-        ("search-files,s", program_options::value<std::string>(), "files in input to search")
-        ("blocks-out", program_options::value<std::string>(), "seralize input to a DB")
-        ("conditions,i", program_options::value<std::string>(), "input script file")
-        ("in-file,f", program_options::value<std::string>(), "input file")
-        ("architecture,a", program_options::value<std::string>(),"architecture")
+        ("file,f", program_options::value<std::string>(), "input file")
+        ("conditions,c", program_options::value<std::string>(), "lua conditions script file")
+        ("arch,a", program_options::value<std::string>(),"architecture - x86, x64, arm, thumb")
         ("jumps,j", program_options::value<int>(), "jumps to follow")
-        ("bucketsize,b", program_options::value<uint32_t>(), "bucket size");
-
+        ("block-size,n", program_options::value<unsigned int>(), "max size in statements of blocks to search")
+        ("blocks-out", program_options::value<std::string>(), "seralize input to a DB")
+        ("bucket-size", program_options::value<uint32_t>(), "bucket size")
+        ("search-files", program_options::value<std::string>(), "files in input to search");
 
     program_options::store(
         program_options::parse_command_line(argc, argv, d), vm);
     
-    if( vm.count("bucketsize") ) {
-        bucketSize = vm["bucketsize"].as<uint32_t>();
+    if( vm.count("bucket-size") ) {
+        bucketSize = vm["bucket-size"].as<uint32_t>();
     } else {
         bucketSize = 0x1000;
     }
@@ -230,25 +234,12 @@ int main(int argc, char *argv[]) {
         filesToSearch = vm["search-files"].as<std::string>();
     }
 
-    if( vm.count("version") ) {
-        std::cout << d << std::endl;
-        return 0;
-    } 
-
     if( vm.count("help") ) {
         std::cout << d << std::endl;
         return 0;
     }
     
     ta = archFromVM(vm);
-
-    /*
-    if( fmt == MachOFmt && ta.ta == INVALID ) {
-        std::cout << "Must specify an architecture for mach-o objects" << std::endl;
-        std::cout << d << std::endl;
-        return 0;
-    }
-    */
 
     if( vm.count("jumps") ) { 
         jumps = vm["jumps"].as<int>();
@@ -257,8 +248,21 @@ int main(int argc, char *argv[]) {
     }
 
     // get the input binary filename
-    if( vm.count("in-file") ) {
-        inputFile = vm["in-file"].as<std::string>();
+    if( vm.count("file") ) {
+        inputFile = vm["file"].as<std::string>();
+    
+        // create our executable wrapper
+        codeProvider = new ExecCodeProvider(inputFile, ta);    
+        if(codeProvider->getError())
+        {
+            return 0;
+        }
+
+        // retrieve the detected architecture
+        ta = codeProvider->getArch();
+    
+        //TODO: sanity checks on codeProvider
+    
     } else {
         std::cout << "Must specify an input file" << std::endl;
         std::cout << d << std::endl; 
@@ -278,39 +282,39 @@ int main(int argc, char *argv[]) {
         std::cout << d << std::endl;
         return 0;
     }
-    
+
+
+    std::cout << std::string(50, '-') << std::endl;
+    std::cout << "--[  Searching... " << std::endl;
+    std::cout << std::string(40, '-') << std::endl;
+
     //construct a visitor class
     RopLibVisitorPtr    mvee(new MatchesVEE(cs, jumps));
 
     //construct a searcher class 
-        //send a placehold 'fmt' for now (Invalid)
-    RopLibSearcher  rls(mvee, inputFile, filesToSearch, Invalid, ta, maxSize);
+    RopLibSearcher  rls(mvee, codeProvider, filesToSearch, Invalid, ta, maxSize);
 
     //initialize with some blocks
-    //std::cerr << "building blocks..." << std::endl;
-
     rls.getBlocks(bucketSize);
     
     //now, while we have searching to do, apply our search class
     while( rls.canSearch() ) 
     {
-      if(rls.needsMoreBlocks())
-      {
-        if(rls.getBlocks(bucketSize) == false) {
-			std::cout << "failed to get blocks, bailing" << std::endl;
-			break;
-		}
-        continue;
-      }
-
+        if(rls.needsMoreBlocks())
+        {
+            if(rls.getBlocks(bucketSize) == false)
+            {
+			    //std::cout << "No more blocks!" << std::endl;
+			    break;
+		    }
+            continue;
+        }
       print_progress(rls.getNumBlocks(), rls.getBlocksDone());
       rls.evalOneBlock();
     }
 
     std::cout << std::endl;
-    std::cerr << "done searching!" << std::endl;
-    std::list<std::list<BlockPtr> >  found = rls.getBlocksFound();
-    std::cerr << "found " << found.size() << std::endl;
+    std::cout << "Done searching!" << std::endl;
    
     csh handle;
     cs_insn * insn;
@@ -319,14 +323,20 @@ int main(int argc, char *argv[]) {
     // init the capstone engine
     if(cs_open( archToCapstone(ta), archToCapstoneMode(ta), &handle) != CS_ERR_OK)
     {
-       std::cerr << "Failed to initialize the Capstone Engine" << std::endl;
-       std::cerr << "Capstone Error: " << cs_strerror(cs_errno(handle));
+       std::cout << "[Error] Failed to initialize the Capstone Engine" << std::endl;
+       std::cout << "[Error] Capstone Error: " << cs_strerror(cs_errno(handle));
        return 0;
     }
 
-    int error = 0;
-    int good = 0;
-
+    
+    std::cout << std::string(50, '-') << std::endl;
+    std::cout << "--[  Gadgets " << std::endl;
+    std::cout << std::string(40, '-') << std::endl;
+    
+    std::list<std::list<BlockPtr> >  found = rls.getBlocksFound();
+    good = error = 0;
+    
+    // pretty print our found gadgets
     for(std::list<std::list<BlockPtr> >::iterator tit = found.begin(); 
         tit != found.end(); 
         ++tit) 
@@ -382,26 +392,34 @@ int main(int argc, char *argv[]) {
                     }
                     else
                     {
-                        std::cerr << "ERROR: Could not disassemble given code!" << std::endl;
+                        //TODO: maybe just drop these? anytime capstone fails, IDA seems to agree
+                        printf("[Error] Could not disassemble gadget at 0x%08llx!\n", blockBase);
                         error++;
                     }
 
                     break;
                 
-                } else {
-                    std::cerr << "ERR: VA " << std::hex << blockBase;
-                    std::cerr << " - " << blockBase+blockLen << std::dec;
-                    std::cerr << " not in maps" << std::endl;
+                }
+                else
+                {
+                    // print an error if our virtual address is way out of bounds for some reason
+                    std::cout << "[Error] VA " << std::hex << blockBase;
+                    std::cout << " - " << blockBase+blockLen << std::dec;
+                    std::cout << " not in maps" << std::endl;
                     error++;
                 }
             }
         }
-        std::cout << " --------- " << std::endl;
+        std::cout << " " << std::string(30, '-') << std::endl;
     }
-    
-    // TODO: figure out where these errors are coming from
-    printf("good: %u - errors: %u\n", good, error);
-    
+   
+    // print some stats
+    // TODO: timing would be fun
+    std::cout << std::string(50, '-') << std::endl;
+    std::cout << "--[  Stats " << std::endl;
+    std::cout << std::string(40, '-') << std::endl;
+    std::cout << "Gadgets found: " << good << std::endl;
+    printf("[Debug] good: %u - errors: %u\n", good, error);
     
     return 0;
 }

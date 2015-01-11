@@ -36,7 +36,8 @@ enum TargetMajorArch {
 	ARM,
 	PPC32,
 	PPC64,
-	S390X
+	S390X,
+    AUTODETECT
 };
 
 enum TargetSubArch {

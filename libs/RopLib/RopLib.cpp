@@ -29,16 +29,17 @@ void print_progress(double Total, double Done, ostream &s) {
     return;
 }
 
-RopLibSearcher::RopLibSearcher( string        sourceFile,
+RopLibSearcher::RopLibSearcher( ExecCodeProvider* givenProvider,
                                 string        fnSearch,
                                 FileFormat    fmt,
                                 TargetArch    t,
                                 unsigned int  m) :
-    codeProvider(new ExecCodeProvider(sourceFile, fmt, t)),
+    codeProvider(givenProvider),
     tarch(t),
     totalBlocks(0),
     maxNumStatements(m)
 {
+    
     TargetInfo  ti;
     //also, initialize the VEX context
     if( tarch.ta == X86 ) {
@@ -54,7 +55,7 @@ RopLibSearcher::RopLibSearcher( string        sourceFile,
         ti.guestHWcaps = 0;
         ti.hostHWcaps = 0;
     }
-
+    
     ti.maxInstructions = 99;
     ti.chaseThreshold = 10;
     ti.opLevel = FullOpt;
@@ -79,9 +80,11 @@ RopLibSearcher::RopLibSearcher( string        sourceFile,
     for( list<string>::iterator it = names.begin(); it != names.end(); ++it ) {
         string  curName = *it;
         if( regex_search(curName, sm, regexFilter) ) {
+            /*
+            //TODO: fix this area 
             secVT   tmp = this->codeProvider->sections_in_file(curName);
-            
             this->execCode.insert(this->execCode.end(), tmp.begin(), tmp.end());
+            */
         }
     }
 
@@ -116,12 +119,12 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
 }
 
 RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v, 
-                                string          sourceFile,
+                                ExecCodeProvider* givenProvider,
                                 string          fnSearch, 
                                 FileFormat      fmt,
                                 TargetArch      t,
                                 unsigned int    m) :
-    codeProvider(new ExecCodeProvider(sourceFile, fmt, t)),
+    codeProvider(givenProvider),
     visitor(v),
     tarch(t),
     translatedBlocks(0),
@@ -129,6 +132,7 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
 {
     this->totalBlocks = 0;
     TargetInfo  ti;
+    
     //also, initialize the VEX context
     if( tarch.ta == X86 ) {
         ti.guestHWcaps =
@@ -143,15 +147,15 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
         ti.guestHWcaps = 0;
         ti.hostHWcaps = 0;
     }
-
+    
     ti.maxInstructions = 99;
     ti.chaseThreshold = 10;
     ti.opLevel = FullOpt;
     ti.tarch = tarch;
 
     this->decodeCtx = initDecodeLib(ti, true, false);
-
     assert(this->decodeCtx != NULL); 
+    
     //initialize the execCode fields by searching through all the file 
     //names in codeProvider, comparing them to a regex
     string  filter;
@@ -160,7 +164,29 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
     } else {
         filter = ".*";
     }
+    
+    list<string> names = this->codeProvider->filenames();
+    for( list<string>::iterator it = names.begin(); it != names.end(); ++it )
+    {
+        string  curName = *it;
+        //std::cout << "filename: " << curName << std::endl;
+    }
+    
+    secVT tmp = this->codeProvider->getExecSections();
+    this->execCode.insert(this->execCode.end(), tmp.begin(), tmp.end());
+    for(secVT::iterator sit = tmp.begin(); sit != tmp.end(); ++sit)
+    {
+        secAndArchT i = *sit;
+        secPT       j = i.second;
+        lenAddrT    k = j.second;
+        this->totalBlocks += k.first;
 
+        //printf("arch 0x%08x - section 0x%08x - length 0x%08x\n", i.first.ta, k.second, k.first);
+        //std::cout << "total blocks: " << this->totalBlocks << std::endl;
+    }
+
+    /*
+    TODO: re-implement name based binary selection (for dylibs?)
     regex   regexFilter(filter);
     smatch  sm;
     
@@ -181,7 +207,7 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
             }
         }
     }
-
+    */
     return;
 }
 
@@ -270,11 +296,12 @@ bool RopLibSearcher::getBlocks(uint32_t count)
       soFar += bufLen;
   }
 
-  //assert(curBuf != NULL && curBufLen != 0);
-  if(curBuf == NULL && curBufLen == 0) {
-    cout << "curBuf is null, this is bad" << endl;
+  if(curBuf == NULL && curBufLen == 0)
+  {
+    //cout << "curBuf is null, this is bad" << endl;
     return false;
   }
+
   assert(start < curBufLen);
 
   //cout << "retreiving up to " << count << " blocks" << endl;
@@ -433,12 +460,12 @@ void RopLibSearcher::evalOneBlock(void) {
 }
 
 StatefulRopLibSearcher::StatefulRopLibSearcher( RopLibVisitorPtr   v,
-                                                string sourceFile, 
+                                                ExecCodeProvider* givenProvider,
                                                 string f, 
                                                 FileFormat fmt, 
                                                 TargetArch arch,
                                                 unsigned int m) :
-                                   RopLibSearcher(v, sourceFile, f, fmt, arch, m) 
+                                   RopLibSearcher(v, givenProvider, f, fmt, arch, m) 
 {
     
     return;

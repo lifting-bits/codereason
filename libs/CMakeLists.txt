@@ -1,5 +1,5 @@
 add_subdirectory(IR)  
-add_subdirectory(PELib)
+add_subdirectory(pe-parse)
 add_subdirectory(RopLib)
 add_subdirectory(VEE)
 IF(NOT WIN32)
