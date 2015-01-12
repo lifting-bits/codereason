@@ -199,14 +199,16 @@ int main(int argc, char *argv[]) {
     uint32_t                                bucketSize;
     unsigned int                            good;
     unsigned int                            error;
-    
+    bool                                    raw;
+
     d.add_options()
         ("help,h", "print help")
         ("file,f", program_options::value<std::string>(), "input file")
         ("conditions,c", program_options::value<std::string>(), "lua conditions script file")
         ("arch,a", program_options::value<std::string>(),"architecture - x86, x64, arm, thumb")
         ("jumps,j", program_options::value<int>(), "jumps to follow")
-        ("block-size,n", program_options::value<unsigned int>(), "max size in statements of blocks to search")
+        ("raw", "interpret input file as raw blob")
+        ("block-size", program_options::value<unsigned int>(), "max size in statements of blocks to search")
         ("blocks-out", program_options::value<std::string>(), "seralize input to a DB")
         ("bucket-size", program_options::value<uint32_t>(), "bucket size")
         ("search-files", program_options::value<std::string>(), "files in input to search");
@@ -247,12 +249,19 @@ int main(int argc, char *argv[]) {
         jumps = 1;
     }
 
+    if( vm.count("raw") )
+    {
+        raw = true;
+    } else {
+        raw = false;
+    }
+
     // get the input binary filename
     if( vm.count("file") ) {
         inputFile = vm["file"].as<std::string>();
     
         // create our executable wrapper
-        codeProvider = new ExecCodeProvider(inputFile, ta);    
+        codeProvider = new ExecCodeProvider(inputFile, ta, raw);    
         if(codeProvider->getError())
         {
             return 0;
@@ -285,7 +294,7 @@ int main(int argc, char *argv[]) {
 
 
     std::cout << std::string(50, '-') << std::endl;
-    std::cout << "--[  Searching... " << std::endl;
+    std::cout << "--[  Searching" << std::endl;
     std::cout << std::string(40, '-') << std::endl;
 
     //construct a visitor class
@@ -293,6 +302,8 @@ int main(int argc, char *argv[]) {
 
     //construct a searcher class 
     RopLibSearcher  rls(mvee, codeProvider, filesToSearch, Invalid, ta, maxSize);
+    std::cout << " Enumerated " << rls.getNumBlocks() << " blocks!" << std::endl;
+    std::cout << " Searching for gadgets that match constraints..." << std::endl;
 
     //initialize with some blocks
     rls.getBlocks(bucketSize);
@@ -314,7 +325,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << std::endl;
-    std::cout << "Done searching!" << std::endl;
+    std::cout << " Done searching!" << std::endl;
    
     csh handle;
     cs_insn * insn;
@@ -354,6 +365,8 @@ int main(int argc, char *argv[]) {
             uint64_t    blockBase = b->getBlockBase();
             uint64_t    blockLen = b->getBlockLen();
 
+            
+
             //print gadget address
             //std::cout << std::hex << addr << std::dec << std::endl;
             
@@ -369,7 +382,7 @@ int main(int argc, char *argv[]) {
                 uint8_t *buf = secAndLen.first;
                 uint64_t baseAddr = len.second;
                 uint32_t bufLen = len.first;
-
+                
                 //does this section have that VA?
                 if( ((blockBase >= baseAddr) &&
                     (blockBase < (baseAddr+bufLen))) &&
@@ -379,6 +392,10 @@ int main(int argc, char *argv[]) {
                     uint64_t    delta = blockBase-baseAddr;
                     uint8_t     *disBuf = buf+delta; 
                    
+                    // if a raw blob, readjust the base back down 0x1000
+                    if(raw)
+                        blockBase -= 0x1000;
+                
                     //send buffer to capstone for disassembly
                     count = cs_disasm(handle, disBuf, blockLen, blockBase, 0, &insn); 
                     if(count > 0)

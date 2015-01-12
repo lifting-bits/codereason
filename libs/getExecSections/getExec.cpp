@@ -2,12 +2,11 @@
 #include "getExec_int.h"
 #include "parse.h"
 
-using namespace boost;
-#ifndef WIN32
 #include <machine.h>
 #include <loader.h>
 #include <fat.h>
-#endif
+
+using namespace boost;
 
 static inline unsigned short bswap_16(unsigned short x) {
 	return (x>>8) | (x<<8);
@@ -338,7 +337,10 @@ secVT ExecCodeProvider::findInMach()
 secVT ExecCodeProvider::getRaw()
 {
     secVT s;
-    lenAddrT    pv = lenAddrT(this->bufLen, 0);
+    
+    // the base address for raw blobs is set to 0x1000 
+    // as the VEX engine will complain if it starts at address 0
+    lenAddrT    pv = lenAddrT(this->bufLen, 0x1000);
     secPT       p = secPT(this->buf, pv);
     secAndArchT at = secAndArchT(this->arch,p);
     s.push_back(at);
@@ -369,7 +371,7 @@ TargetArch ExecCodeProvider::convertPEArch(uint32_t machine_type)
 }
 
 // our super executable wrapper that abstracts everything away!
-ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t)
+ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
 {
     this->arch = t;
     this->err = false;
@@ -380,8 +382,6 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t)
     this->elfCtx = NULL;
     this->machoCtx = NULL;
     this->dyldCtx = NULL;
-    bool raw = false;       //TODO: placeholder, implement as argument later
-
 
     // open and map the executable
     FILE *fp = fopen(p.c_str(), "rb");
@@ -413,15 +413,14 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t)
     // Raw blob
     if(raw)
     {
-        std::cout << "Raw blob" << std::endl;
+        std::cout << "Raw Blob" << std::endl;
         this->fmt = RawFmt;
         this->arch = t;
 
         // we're not going to guess the architecture of raw data :|
         if(this->arch.ta == AUTODETECT)
         {
-            std::cout << "[Error] You must specify an architecture\
-                            when using a raw blob" << std::endl; 
+            std::cout << "[Error] You must specify an architecture when using a raw blob" << std::endl; 
             this->err = true;
             return;
         }

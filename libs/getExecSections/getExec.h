@@ -57,12 +57,12 @@ private:
     
     secVT getExecPESections();
     secVT findInMach();
-    secVT findInMachFromBuff(uint8_t *buf, uint32_t len, TargetArch t);
+    secVT findInMachFromBuff(uint8_t *, uint32_t, TargetArch);
     secVT getRaw();
 
 public:
     ExecCodeProvider() : err(true) { return; }
-    ExecCodeProvider(std::string, TargetArch);
+    ExecCodeProvider(std::string, TargetArch, bool);
 
     bool getError(void) { return this->err; }
     TargetArch getArch(void) { return this->arch; }
