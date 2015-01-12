@@ -37,6 +37,7 @@ RopLibSearcher::RopLibSearcher( ExecCodeProvider* givenProvider,
     codeProvider(givenProvider),
     tarch(t),
     totalBlocks(0),
+    evaluatedBlocks(0),
     maxNumStatements(m)
 {
     
@@ -128,6 +129,7 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
     visitor(v),
     tarch(t),
     translatedBlocks(0),
+    evaluatedBlocks(0),
     maxNumStatements(m)
 {
     this->totalBlocks = 0;

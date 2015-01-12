@@ -99,7 +99,7 @@ VisitorResult MatchesVEE::keepBlock(BlockPtr b) {
 
 //print progress
 static
-void print_progress(unsigned int Total, unsigned int Done) {
+void print_progress(uint64_t Total, uint64_t Done) {
     const int tdot = 40;
 
     double pctDone = ((double)Done)/((double)Total);
@@ -320,6 +320,7 @@ int main(int argc, char *argv[]) {
 		    }
             continue;
         }
+      
       print_progress(rls.getNumBlocks(), rls.getBlocksDone());
       rls.evalOneBlock();
     }
