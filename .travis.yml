@@ -1,11 +1,22 @@
 language: cpp
 cache: apt
-before_install: sudo ./install_deps.sh && cd capstone-3.0 && ./setup_capstone.sh && cd .. && cd libs/pe-parse && cmake . && make && cd ../../ 
-install: cd vexTRUNK && make
-script: cd .. && mkdir build && cd build && cmake .. && make -j2
+os:
+- osx
+- linux
 compiler:
 - gcc
 - clang
+before_install:
+- if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo ./install_deps.sh; fi
+- if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update && brew install cmake protobuf boost; fi
+- cd capstone-3.0 && ./setup_capstone.sh && cd ..
+- cd libs/pe-parse && cmake . && make && cd ../../
+- cd vexTRUNK && make && cd ..
+script:
+- mkdir build && cd build && cmake .. && make -j2
+matrix:
+  allow_failures:
+    - os: osx
 notifications:
   slack:
     secure: bewLb+C2yiKmLUh0o/vftey+tl0XrmgkPi38uO+zbZ1kXJw/ByweJNrumgO/EJ4GDodb4cLHIUFuk4fNpkSUeV1CBSql7sm2cgQ9pIoQcdeEcANOeUmdepYwRh2xTOjRCeQnh0FYUkeyrQpzFwk1f+yybZrppw6dKu677v8CB1w=
