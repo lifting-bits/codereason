@@ -17,6 +17,9 @@ script:
 matrix:
   allow_failures:
     - os: osx
+  exclude:
+  - compiler: gcc
+    os: osx
 notifications:
   slack:
     secure: bewLb+C2yiKmLUh0o/vftey+tl0XrmgkPi38uO+zbZ1kXJw/ByweJNrumgO/EJ4GDodb4cLHIUFuk4fNpkSUeV1CBSql7sm2cgQ9pIoQcdeEcANOeUmdepYwRh2xTOjRCeQnh0FYUkeyrQpzFwk1f+yybZrppw6dKu677v8CB1w=
