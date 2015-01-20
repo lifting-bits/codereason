@@ -25,7 +25,7 @@ void * initDecodeLib2(TargetArch, bool do_throw, bool dbg_spew);
 bool convertToOneBlock(void				*ctx,
 					   unsigned char	*buf,
 					   unsigned long	bufLen,
-					   unsigned long	baseAddr,
+					   uint64_t	baseAddr,
 					   TargetArch		arch,
              unsigned int maxStatements,
 					   BlockPtr			&blockOut);
