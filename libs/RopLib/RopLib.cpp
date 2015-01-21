@@ -315,7 +315,7 @@ bool RopLibSearcher::getBlocks(uint32_t count)
     uint64_t    baseVA = curBaseAddr + i;
     BlockPtr    b;
     bool        r;
-
+    
     if(blocksDone == count) {
       break;
     }

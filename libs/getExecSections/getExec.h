@@ -56,6 +56,7 @@ private:
     std::string fName;
     
     secVT getExecPESections();
+    secVT getExecELFSections();
     secVT findInMach();
     secVT findInMachFromBuff(uint8_t *, uint32_t, TargetArch);
     secVT getRaw();
@@ -72,6 +73,7 @@ public:
     
     // handy executable arch to TargetArch converters
     TargetArch convertPEArch(uint32_t machine_type);
+    TargetArch convertELFArch(uint32_t machine_type);
 };
 
 typedef boost::shared_ptr<ExecCodeProvider> ExecCodeProviderPtr;

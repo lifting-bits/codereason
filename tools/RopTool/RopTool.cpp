@@ -362,16 +362,12 @@ int main(int argc, char *argv[]) {
         {
             BlockPtr    b = *it;
             uint64_t    addr = b->getBlockBase();
-            secVT       sectionsToSearch = rls.getSections();
             uint64_t    blockBase = b->getBlockBase();
             uint64_t    blockLen = b->getBlockLen();
+            bool        found = false;
 
-            
-
-            //print gadget address
-            //std::cout << std::hex << addr << std::dec << std::endl;
-            
             //disassemble the buffer
+            secVT sectionsToSearch = rls.getSections();
             for(secVT::iterator sit = sectionsToSearch.begin();
                 sit != sectionsToSearch.end();
                 ++sit)
@@ -384,24 +380,30 @@ int main(int argc, char *argv[]) {
                 uint64_t baseAddr = len.second;
                 uint32_t bufLen = len.first;
                 
-                //does this section have that VA?
+                //printf("blockBase %llx >= baseAddr %llx\n", blockBase, baseAddr);
+                //printf("blockBase %llx < baseAddr+bufLen %llx bufLen %x\n", blockBase, baseAddr+bufLen, bufLen);
+                //printf("blockBase+blockLen %llx <= baseAddr+bufLen %llx blockLen %llx\n\n", blockBase+blockLen, baseAddr+bufLen, blockLen);
+                
+                // does this section have that VA?
                 if( ((blockBase >= baseAddr) &&
                     (blockBase < (baseAddr+bufLen))) &&
                     ((blockBase+blockLen <= (baseAddr+bufLen))) )
                 {
-                    //it does, print the disassembly and leave
+                    // it does, print the disassembly and leave
                     uint64_t    delta = blockBase-baseAddr;
                     uint8_t     *disBuf = buf+delta; 
-                   
+                    found = true;
+                    
                     // if a raw blob, readjust the base back down 0x1000
                     if(raw)
                         blockBase -= 0x1000;
                 
-                    //send buffer to capstone for disassembly
+                    // send buffer to capstone for disassembly
                     count = cs_disasm(handle, disBuf, blockLen, blockBase, 0, &insn); 
+
                     if(count > 0)
                     {
-                        //print instructions
+                        // disassembly succeeded, print instructions
                         for(size_t i = 0; i < count; i++)
                             printf("0x%llx: %s\t%s\n", insn[i].address, insn[i].mnemonic, insn[i].op_str);
                     
@@ -410,7 +412,7 @@ int main(int argc, char *argv[]) {
                     }
                     else
                     {
-                        //TODO: maybe just drop these? anytime capstone fails, IDA seems to agree
+                        // TODO: maybe just drop these? anytime capstone fails, IDA seems to agree
                         printf("[Error] Could not disassemble gadget at 0x%08llx!\n", blockBase);
                         error++;
                     }
@@ -418,14 +420,17 @@ int main(int argc, char *argv[]) {
                     break;
                 
                 }
-                else
-                {
-                    // print an error if our virtual address is way out of bounds for some reason
-                    std::cout << "[Error] VA " << std::hex << blockBase;
-                    std::cout << " - " << blockBase+blockLen << std::dec;
-                    std::cout << " not in maps" << std::endl;
-                    error++;
-                }
+            }
+            
+            // if the gadget was not found in any of our executable sections
+            // something is going horribly wrong
+            if(!found)
+            {
+                // print an error if our virtual address is way out of bounds for some reason
+                std::cout << "[Error] VA " << std::hex << blockBase;
+                std::cout << " - " << blockBase+blockLen << std::dec;
+                std::cout << " not in maps" << std::endl;
+                error++;
             }
         }
         std::cout << " " << std::string(30, '-') << std::endl;

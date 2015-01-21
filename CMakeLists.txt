@@ -18,10 +18,12 @@ find_path(VEX_INCLUDE_DIR libvex.h REQUIRED PATHS ./vexTRUNK/pub NO_DEFAULT_PATH
 #define capstone's includes
 set(CAPSTONE_SRC_DIR "./capstone-3.0/capstone-3.0")
 set(PE-PARSE_SRC_DIR "./libs/pe-parse/parser-library")
+set(ELFIO_SRC_DIR "./libs/elfio")
 
 include_directories(${VEX_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${PROTOBUF_INCLUDE_DIR})
+include_directories(${ELFIO_SRC_DIR})
 
 IF(WIN32)
     #on win32, vex is pre-built

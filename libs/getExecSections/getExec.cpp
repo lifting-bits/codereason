@@ -2,9 +2,12 @@
 #include "getExec_int.h"
 #include "parse.h"
 
+#include <elfio/elfio.hpp>
+
 #include <machine.h>
 #include <loader.h>
 #include <fat.h>
+
 
 using namespace boost;
 
@@ -52,6 +55,32 @@ int peSecCb(void *                  N,
     return 0;
 }
 
+
+// given a linux ELF, extract any executable sections
+secVT ExecCodeProvider::getExecELFSections()
+{
+    ELFIO::elfio *reader = (ELFIO::elfio*)this->elfCtx;
+    secVT found;
+
+    ELFIO::Elf_Half seg_num = reader->segments.size();
+    for(int i = 0; i < seg_num; i++)
+    {
+        const ELFIO::segment* pseg = reader->segments[i];
+        
+        // select only executable segments
+        if(pseg->get_flags() & 1)
+        {
+            lenAddrT  pv = lenAddrT((uint32_t)pseg->get_file_size(),
+                                    pseg->get_virtual_address());
+            secPT p = secPT((unsigned char *)pseg->get_data(), pv);
+            secAndArchT n = secAndArchT(this->arch, p);
+            found.push_back(n);
+        }
+    }
+    
+    // return the executable sections found
+    return found;
+}
 
 // given a windows PE, extract any executable sections
 secVT ExecCodeProvider::getExecPESections() {
@@ -347,6 +376,30 @@ secVT ExecCodeProvider::getRaw()
     return s;
 }
 
+// convert the linux ELF arch field to our TargetArch type
+TargetArch ExecCodeProvider::convertELFArch(uint32_t machine_type)
+{
+    TargetArch result;
+
+    switch(machine_type)
+    {
+        case EM_ARM:
+            result.ta = ARM;
+            result.tm = THUMB;
+            break;
+        case EM_386:
+            result.ta = X86;
+            break;
+        case EM_X86_64:
+            result.ta = AMD64;
+            break;
+        default:
+            result.ta = INVALID;
+    }
+
+    return result;
+}
+
 // convert the windows PE arch field to our TargetArch type
 TargetArch ExecCodeProvider::convertPEArch(uint32_t machine_type)
 {
@@ -446,6 +499,20 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
     {
         std::cout << "Linux ELF" << std::endl;
         this->fmt = ELFFmt;
+        this->elfCtx = new ELFIO::elfio;
+
+        ELFIO::elfio * reader = (ELFIO::elfio*)this->elfCtx;
+        if(!reader->load(p.c_str()))
+        {
+            std::cout << "[Error] Cannot find or process ELF file "
+                      << p 
+                      << std::endl;
+            this->err = true;
+            return;
+        }
+
+        this->arch = this->convertELFArch(reader->get_machine()); 
+        
     }
 
     // x86 & x64 MachO's
@@ -589,6 +656,12 @@ secVT ExecCodeProvider::getExecSections() {
         case PEFmt:
         {
             secs = this->getExecPESections();
+        }
+            break;
+        
+        case ELFFmt:
+        {
+            secs = this->getExecELFSections();
         }
             break;
 
