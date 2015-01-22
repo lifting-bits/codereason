@@ -112,7 +112,7 @@ struct dyld_cache_image_info {
 	boost::uint32_t	pad;
 };
 
-typedef boost::int32_t		integer_t;
+typedef boost::uint32_t		integer_t;
 typedef integer_t	cpu_type_t;
 typedef integer_t	cpu_subtype_t;
 

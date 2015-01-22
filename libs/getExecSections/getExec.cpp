@@ -172,31 +172,15 @@ bool ExecCodeProvider::selectArchForFAT(TargetArch t)
         // check if this a 32/64 bit little endian MachO
         if(mhd->magic == MH_MAGIC || mhd->magic == MH_MAGIC_64)
         {
-        
-            // flag this MachO if it matches our requested arch
-            switch(t.ta) 
-            {
-                case X86:
-                    found = (mhd->cputype == CPU_TYPE_X86);
-                    break;
-                case AMD64:
-                    found = (mhd->cputype == (CPU_TYPE_X86_64 | CPU_ARCH_ABI64));
-                    break;
-                case ARM:
-                    found = (mhd->cputype == CPU_TYPE_ARM);
-                    break;
-                default:
-                    found = false;
-            }
+            t = convertMachArch(mhd->cputype);
             
-            // found our MachO, save the location & arch
-            if(found)
+            // found our MachO, save the buffer location & arch
+            if(t.ta != INVALID)
             {
                 this->machoCtx = mhd;
                 this->arch = t;
                 break;
             }
-
         }
     }
 
@@ -204,7 +188,7 @@ bool ExecCodeProvider::selectArchForFAT(TargetArch t)
 }
 
 //TODO: clean this up, trim it down, remove unecessary args, rename
-secVT ExecCodeProvider::findInMachFromBuff(uint8_t *buf, uint32_t len, TargetArch t)
+secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len, TargetArch t)
 {
 	secVT found;
    
@@ -327,7 +311,7 @@ secVT ExecCodeProvider::findInMachFromBuff(uint8_t *buf, uint32_t len, TargetArc
 }
 
 // this file might or might not be a FAT object
-secVT ExecCodeProvider::findInMach()
+secVT ExecCodeProvider::getExecMachSections()
 {
     secVT   found;
 
@@ -340,14 +324,14 @@ secVT ExecCodeProvider::findInMach()
         fat_arch	*fats = 
             (fat_arch*)( ((ptrdiff_t)this->buf)+sizeof(fat_header) );
 
-        // call findInMachFromBuff on each
+        // call getExecMachSectionsFromBuff on each
         uint32_t	numArches = bswap_32(n->nfat_arch);
         for( int i = 0; i < numArches; i++ ) 
         {
             uint32_t	fatsOff = bswap_32(fats[i].offset);
             uint8_t	*newBuff = (uint8_t*) ( ((ptrdiff_t)this->buf) + fatsOff);
 
-            secVT tmp = this->findInMachFromBuff(newBuff, this->bufLen-fatsOff, this->arch);
+            secVT tmp = this->getExecMachSectionsFromBuff(newBuff, this->bufLen-fatsOff, this->arch);
 
             found.insert( found.end(), tmp.begin(), tmp.end() );
         }
@@ -356,13 +340,14 @@ secVT ExecCodeProvider::findInMach()
     else
     {
         // not a FAT file, parse like normal 
-        found = this->findInMachFromBuff(this->buf, this->bufLen, this->arch);
+        found = this->getExecMachSectionsFromBuff(this->buf, this->bufLen, this->arch);
     }
 #endif
 
     return found;
 }
 
+// returns the 'one' virtual segment of our raw blob
 secVT ExecCodeProvider::getRaw()
 {
     secVT s;
@@ -376,30 +361,6 @@ secVT ExecCodeProvider::getRaw()
     return s;
 }
 
-// convert the linux ELF arch field to our TargetArch type
-TargetArch ExecCodeProvider::convertELFArch(uint32_t machine_type)
-{
-    TargetArch result;
-
-    switch(machine_type)
-    {
-        case EM_ARM:
-            result.ta = ARM;
-            result.tm = THUMB;
-            break;
-        case EM_386:
-            result.ta = X86;
-            break;
-        case EM_X86_64:
-            result.ta = AMD64;
-            break;
-        default:
-            result.ta = INVALID;
-    }
-
-    return result;
-}
-
 // convert the windows PE arch field to our TargetArch type
 TargetArch ExecCodeProvider::convertPEArch(uint32_t machine_type)
 {
@@ -407,22 +368,111 @@ TargetArch ExecCodeProvider::convertPEArch(uint32_t machine_type)
 
     switch(machine_type)
     {
-        case IMAGE_FILE_MACHINE_ARM:
-            result.ta = ARM;
-            break;
+        
         case IMAGE_FILE_MACHINE_I386:
+        {
             result.ta = X86;
+        }
             break;
+        
         case IMAGE_FILE_MACHINE_AMD64:
+        {
             result.ta = AMD64;
+        }
             break;
+        
+        /* TODO: find some elegant way to switch between arm/thumb
+                 rather than just hardcoding thumb :| */     
+        case IMAGE_FILE_MACHINE_ARM:
+        {
+            result.ta = ARM;
+            result.tm = THUMB;
+        }
+            break;
+        
         default:
+        {
             result.ta = INVALID;
+        }
     }
 
     return result;
 }
 
+// convert the linux ELF arch field to our TargetArch type
+TargetArch ExecCodeProvider::convertELFArch(uint32_t machine_type)
+{
+    TargetArch result;
+
+    switch(machine_type)
+    {
+        
+        case EM_386:
+        {
+            result.ta = X86;
+        }
+            break;
+        
+        case EM_X86_64:
+        {
+            result.ta = AMD64;
+        }
+            break;
+        
+        /* TODO: find some elegant way to switch between arm/thumb
+                 rather than just hardcoding thumb :| */     
+        case EM_ARM:
+        {
+            result.ta = ARM;
+            result.tm = THUMB;
+        }
+            break;
+        
+        default:
+        {
+            result.ta = INVALID;
+        }
+    }
+
+    return result;
+}
+
+// convert the windows PE arch field to our TargetArch type
+TargetArch ExecCodeProvider::convertMachArch(uint32_t machine_type)
+{
+    TargetArch result;
+
+    switch(machine_type) 
+    {
+        case CPU_TYPE_X86:
+        {
+            result.ta = X86;
+        }
+            break;
+        
+        case (CPU_TYPE_X86_64 | CPU_ARCH_ABI64):
+        {
+            result.ta = AMD64;
+        }
+            break;
+        
+        /* TODO: find some elegant way to switch between arm/thumb
+                 rather than just hardcoding thumb :| */     
+        case CPU_TYPE_ARM:
+        {
+            result.ta = ARM;
+            result.tm = THUMB;
+        }
+            break;
+        
+        default:
+        {
+            result.ta = INVALID;
+        }
+    }
+    
+    return result;
+}
 // our super executable wrapper that abstracts everything away!
 ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
 {
@@ -461,12 +511,9 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
         return;
     }
 
-    std::cout << "Executable Type: ";
-    
     // Raw blob
     if(raw)
     {
-        std::cout << "Raw Blob" << std::endl;
         this->fmt = RawFmt;
         this->arch = t;
 
@@ -482,25 +529,22 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
     // Windows Executable
     else if(memcmp(this->buf, "MZ", 2) == 0)
     {
-        std::cout << "Windows Executable" << std::endl;
         this->fmt = PEFmt;
         this->peCtx = ParsePEFromFile(p.c_str());
 
-        // determine executable type
+        // determine .exe's architecture
         parsed_pe * p = (parsed_pe*)this->peCtx;
         this->arch = this->convertPEArch(p->peHeader.nt.FileHeader.Machine);
         
-        // do other windows things here
-
     }
     
-    // ELF's
+    // Linux ELF
     else if(memcmp(this->buf, "\x7f\x45\x4c\x46", 4) == 0)
     {
-        std::cout << "Linux ELF" << std::endl;
         this->fmt = ELFFmt;
         this->elfCtx = new ELFIO::elfio;
 
+        // parse ELF header
         ELFIO::elfio * reader = (ELFIO::elfio*)this->elfCtx;
         if(!reader->load(p.c_str()))
         {
@@ -511,27 +555,26 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
             return;
         }
 
+        // determine ELF's architecture
         this->arch = this->convertELFArch(reader->get_machine()); 
         
     }
 
-    // x86 & x64 MachO's
+    // x86 or x64 MachO
     else if((memcmp(this->buf, "\xce\xfa\xed\xfe", 4) == 0) || 
             (memcmp(this->buf, "\xcf\xfa\xed\xfe", 4) == 0))
     {
-        std::cout << "MachO Executable" << std::endl;
         this->fmt = MachOFmt;
        
+        // TODO: get Mac samples and test stuff
         mach_header	*mhd = (mach_header *)this->buf;
         //if( bswap_32(m32->magic) == MH_CIGAM )
         
     }
     
-    // FAT Executables
+    // FAT MachO Executable
     else if(memcmp(this->buf, "\xca\xfe\xba\xbe", 4) == 0)
     {
-
-        std::cout << "Universal (FAT) MachO Executable" << std::endl;
         this->fmt = MachOFmt;
 
         // check if this is FAT MachO, and if it actually has more than one arch
@@ -572,10 +615,8 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
     // handle unrecognized binaries
     else
     {
-        std::cout << "Unrecognized Executable" << std::endl;
         std::cout << "[Error] Could not identify executable format" << std::endl;
         this->err = true;
-        return;
     }
 
     return;
@@ -595,11 +636,17 @@ std::list<std::string> ExecCodeProvider::filenames(void) {
         }
             break;
 
+        //TODO: trim everything but the file name from the filepath for these
         case PEFmt:
         {
             //PE has one 'file name', and that is the file name of the module
             //that we passed 
-            //TODO: get real PE filename
+            found.push_back(this->fName);
+        }
+            break;
+
+        case ELFFmt:
+        {
             found.push_back(this->fName);
         }
             break;
@@ -643,7 +690,7 @@ secVT ExecCodeProvider::getExecSections() {
                     
                     //we found the file, now write it out
                     dy->save_image_with_path(n, "foo.bin");
-                    //secs = findInMach("foo.bin", this->arch);
+                    //secs = getExecMachSections("foo.bin", this->arch);
                     
                     //erase the temporary file
                     boost::filesystem::remove("foo.bin");
@@ -667,7 +714,7 @@ secVT ExecCodeProvider::getExecSections() {
 
         case MachOFmt:
         {
-            secs = this->findInMach();
+            secs = this->getExecMachSections();
         }
             break;
         
