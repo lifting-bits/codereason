@@ -1,6 +1,6 @@
 #ifndef VEE_COND_H
 #define VEE_COND_H
-#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
 
 class Condition {
 private:

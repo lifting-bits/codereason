@@ -17,7 +17,7 @@ Condition::~Condition(void) {
 }
 
 void Condition::runPreVee(VexExecutionStatePtr vss) {
-    mutex::scoped_lock  l(this->stateLock);
+	boost::mutex::scoped_lock  l(this->stateLock);
     if( l ) {
         runPre(this->state, vss);
     }
@@ -25,7 +25,7 @@ void Condition::runPreVee(VexExecutionStatePtr vss) {
 }
 bool Condition::runPostVee(VexExecutionStatePtr vss) {
     bool res = false;
-    mutex::scoped_lock  l(this->stateLock);
+	boost::mutex::scoped_lock  l(this->stateLock);
     if( l ) {
         runPost(this->state, vss, res);
     }

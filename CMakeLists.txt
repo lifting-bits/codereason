@@ -35,6 +35,10 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 add_definitions(-D__i386__)
+# gtest fix on osx
+IF(APPLE)
+add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
+ENDIF(APPLE)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
