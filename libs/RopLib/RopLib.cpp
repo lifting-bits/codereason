@@ -30,7 +30,6 @@ void print_progress(double Total, double Done, ostream &s) {
 }
 
 RopLibSearcher::RopLibSearcher( ExecCodeProvider* givenProvider,
-                                string        fnSearch,
                                 FileFormat    fmt,
                                 TargetArch    t,
                                 unsigned int  m) :
@@ -67,6 +66,8 @@ RopLibSearcher::RopLibSearcher( ExecCodeProvider* givenProvider,
     assert(this->decodeCtx != NULL); 
     //initialize the execCode fields by searching through all the file 
     //names in codeProvider, comparing them to a regex
+    
+    /* 
     string  filter;
     if( fnSearch.size() > 0 ) {
         filter = fnSearch;
@@ -81,14 +82,12 @@ RopLibSearcher::RopLibSearcher( ExecCodeProvider* givenProvider,
     for( list<string>::iterator it = names.begin(); it != names.end(); ++it ) {
         string  curName = *it;
         if( regex_search(curName, sm, regexFilter) ) {
-            /*
             //TODO: fix this area 
             secVT   tmp = this->codeProvider->sections_in_file(curName);
             this->execCode.insert(this->execCode.end(), tmp.begin(), tmp.end());
-            */
         }
     }
-
+    */
     return;
 }
 
@@ -121,7 +120,6 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
 
 RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v, 
                                 ExecCodeProvider* givenProvider,
-                                string          fnSearch, 
                                 FileFormat      fmt,
                                 TargetArch      t,
                                 unsigned int    m) :
@@ -157,23 +155,7 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
 
     this->decodeCtx = initDecodeLib(ti, true, false);
     assert(this->decodeCtx != NULL); 
-    
-    //initialize the execCode fields by searching through all the file 
-    //names in codeProvider, comparing them to a regex
-    string  filter;
-    if( fnSearch.size() > 0 ) {
-        filter = fnSearch;
-    } else {
-        filter = ".*";
-    }
-    
-    list<string> names = this->codeProvider->filenames();
-    for( list<string>::iterator it = names.begin(); it != names.end(); ++it )
-    {
-        string  curName = *it;
-        //std::cout << "filename: " << curName << std::endl;
-    }
-    
+   
     secVT tmp = this->codeProvider->getExecSections();
     this->execCode.insert(this->execCode.end(), tmp.begin(), tmp.end());
     for(secVT::iterator sit = tmp.begin(); sit != tmp.end(); ++sit)
@@ -187,29 +169,6 @@ RopLibSearcher::RopLibSearcher( RopLibVisitorPtr    v,
         //std::cout << "total blocks: " << this->totalBlocks << std::endl;
     }
 
-    /*
-    TODO: re-implement name based binary selection (for dylibs?)
-    regex   regexFilter(filter);
-    smatch  sm;
-    
-    list<string>    names = this->codeProvider->filenames();
-    for( list<string>::iterator it = names.begin(); it != names.end(); ++it ) {
-        string  curName = *it;
-
-        if( regex_search(curName, sm, regexFilter) ) {
-            secVT   tmp = this->codeProvider->sections_in_file(curName);
-
-            this->execCode.insert(this->execCode.end(), tmp.begin(), tmp.end());
-            for(secVT::iterator sit = tmp.begin(); sit != tmp.end(); ++sit)
-            {
-              secAndArchT i = *sit;
-              secPT       j = i.second;
-              lenAddrT    k = j.second;
-              this->totalBlocks += k.first;
-            }
-        }
-    }
-    */
     return;
 }
 
@@ -463,11 +422,10 @@ void RopLibSearcher::evalOneBlock(void) {
 
 StatefulRopLibSearcher::StatefulRopLibSearcher( RopLibVisitorPtr   v,
                                                 ExecCodeProvider* givenProvider,
-                                                string f, 
                                                 FileFormat fmt, 
                                                 TargetArch arch,
                                                 unsigned int m) :
-                                   RopLibSearcher(v, givenProvider, f, fmt, arch, m) 
+                                   RopLibSearcher(v, givenProvider, fmt, arch, m) 
 {
     
     return;

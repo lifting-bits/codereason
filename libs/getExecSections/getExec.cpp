@@ -1,5 +1,4 @@
 #include "getExec.h"
-#include "getExec_int.h"
 #include "parse.h"
 
 #include <elfio/elfio.hpp>
@@ -484,7 +483,6 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
     this->peCtx = NULL;
     this->elfCtx = NULL;
     this->machoCtx = NULL;
-    this->dyldCtx = NULL;
 
     // open and map the executable
     FILE *fp = fopen(p.c_str(), "rb");
@@ -595,21 +593,6 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
             this->err = true;
             return;
         }
-            
-/*
-#ifndef WIN32
-            dyld_decache::ProgramContext *dy = 
-                new dyld_decache::ProgramContext(p);
-            if( dy && dy->open() ) {
-                //read all the files into memory
-                dy->read_all_images();
-                this->dyldCtx = dy;
-            } else {
-                this->err = true;
-            }
-#endif
-*/
-
     }
 
     // handle unrecognized binaries
@@ -626,16 +609,6 @@ std::list<std::string> ExecCodeProvider::filenames(void) {
     std::list<std::string>  found;
     
     switch(this->fmt) {
-        case DyldCacheFmt:
-        {
-#ifndef WIN32
-            dyld_decache::ProgramContext *dy = 
-                (dyld_decache::ProgramContext *) this->dyldCtx;
-            found = dy->list_of_images();
-#endif
-        }
-            break;
-
         //TODO: trim everything but the file name from the filepath for these
         case PEFmt:
         {
@@ -674,32 +647,6 @@ secVT ExecCodeProvider::getExecSections() {
     secVT   secs;
 
     switch(this->fmt) {
-        case DyldCacheFmt:
-        {
-            dyld_decache::ProgramContext *dy = 
-                (dyld_decache::ProgramContext *) this->dyldCtx;
-            std::list<std::string>  fileNames = dy->list_of_images();
-            for(std::list<std::string>::iterator it = fileNames.begin();
-                it != fileNames.end();
-                ++it)
-            {
-                std::string n = *it;
-                std::cout << "looking at filenames: " << n << std::endl;
-                //TODO: Fix dyld handling/parsing
-                if( this->fName == n ) {
-                    
-                    //we found the file, now write it out
-                    dy->save_image_with_path(n, "foo.bin");
-                    //secs = getExecMachSections("foo.bin", this->arch);
-                    
-                    //erase the temporary file
-                    boost::filesystem::remove("foo.bin");
-                    break;
-                }
-            }
-        }
-            break;
-
         case PEFmt:
         {
             secs = this->getExecPESections();

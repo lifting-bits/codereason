@@ -210,8 +210,7 @@ int main(int argc, char *argv[]) {
         ("raw", "interpret input file as raw blob")
         ("block-size", program_options::value<unsigned int>(), "max size in statements of blocks to search")
         ("blocks-out", program_options::value<std::string>(), "seralize input to a DB")
-        ("bucket-size", program_options::value<uint32_t>(), "bucket size")
-        ("search-files", program_options::value<std::string>(), "files in input to search");
+        ("bucket-size", program_options::value<uint32_t>(), "bucket size");
 
     program_options::store(
         program_options::parse_command_line(argc, argv, d), vm);
@@ -230,10 +229,6 @@ int main(int argc, char *argv[]) {
 
     if( vm.count("blocks-out") ) {
         dbOutFile = vm["blocks-out"].as<std::string>();
-    }
-
-    if( vm.count("search-files") ) {
-        filesToSearch = vm["search-files"].as<std::string>();
     }
 
     if( vm.count("help") ) {
@@ -292,7 +287,6 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-
     std::cout << std::string(50, '-') << std::endl;
     std::cout << "--[  Searching" << std::endl;
     std::cout << std::string(40, '-') << std::endl;
@@ -301,7 +295,7 @@ int main(int argc, char *argv[]) {
     RopLibVisitorPtr    mvee(new MatchesVEE(cs, jumps));
 
     //construct a searcher class 
-    RopLibSearcher  rls(mvee, codeProvider, filesToSearch, Invalid, ta, maxSize);
+    RopLibSearcher  rls(mvee, codeProvider, Invalid, ta, maxSize);
     std::cout << " Enumerated " << rls.getNumBlocks() << " blocks!" << std::endl;
     std::cout << " Searching for gadgets that match constraints..." << std::endl;
 

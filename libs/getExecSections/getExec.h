@@ -9,7 +9,6 @@ enum FileFormat {
     PEFmt,
     ELFFmt,
     MachOFmt,
-    DyldCacheFmt,
     RawFmt
 };
 
@@ -43,7 +42,6 @@ private:
     void        *peCtx;
     void        *elfCtx;
     void        *machoCtx;
-    void        *dyldCtx;
     uint8_t     *buf;
     uint32_t    bufLen;
     std::string fName;
