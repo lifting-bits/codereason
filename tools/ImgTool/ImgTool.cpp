@@ -10,6 +10,36 @@
 using namespace boost;
 using namespace std;
 
+// parses the arch from the variable map, autodetect if not set
+TargetArch archFromVM(program_options::variables_map &vm) {
+    TargetArch  tarch;
+
+    if( vm.count("arch") ) {
+        std::string archStr = vm["arch"].as<std::string>();
+        std::transform(archStr.begin(), archStr.end(), archStr.begin(), ::tolower);
+
+        if( archStr  == "x86" ) {
+            tarch.ta = X86;
+        } else if( archStr == "x64" ) {
+            tarch.ta = AMD64;
+        } else if( archStr == "arm" ) {
+            tarch.ta = ARM;
+            tarch.tm = WIDEARM;
+        } else if( archStr == "thumb") {
+            tarch.ta = ARM;
+            tarch.tm = THUMB;
+        } else {
+            tarch.ta = INVALID;
+        }
+
+    } else {
+        tarch.ta = AUTODETECT;
+    }
+
+    return tarch;
+}
+
+// TODO: just make this a public function of ExecCodeProvider? ecp->getArchStr()?
 string tarchToString(TargetArch a ) {
     switch(a.ta) {
         case INVALID:
@@ -36,140 +66,70 @@ string tarchToString(TargetArch a ) {
     }
 }
 
-TargetArch archFromVM(program_options::variables_map &vm) {
-    TargetArch  tarch;
-
-    tarch.ta = INVALID;
-
-    if( vm.count("arch") ) {
-        string archStr = vm["arch"].as<std::string>();
-
-        if( archStr == "X86" ) {
-            tarch.ta = X86;
-        } else if( archStr == "AMD64" ) {
-            tarch.ta = AMD64;
-        } else if( archStr == "ARM" ) {
-            tarch.ta = ARM;
-            tarch.tm = WIDEARM;
-        } else if( archStr == "ARM-THUMB") {
-            tarch.ta = ARM;
-            tarch.tm = THUMB;
-        } else if( archStr == "AMD64" ) {
-            tarch.ta = AMD64;
-        }
-    }
-
-    return tarch;
-}
-
-FileFormat fmtFromVM(program_options::variables_map &vm) {
-    if( vm.count("pe") ) {
-        return PEFmt;
-    }
-
-    if( vm.count("mach-o") ) {
-        return MachOFmt;
-    }
-
-    if( vm.count("raw") ) {
-        return RawFmt;
-    }
-
-    if( vm.count("ucache") ) {
-        return DyldCacheFmt;
-    }
-
-    return Invalid;
-}
-
+// ImgTool should demo the functionality and usage of ExecCodeProvider
 int main(int argc, char *argv[]) {
     program_options::options_description    d("options");
     program_options::variables_map          vm;
+    string                                  inputFile;
+    TargetArch                              ta;
+    ExecCodeProvider *                      codeProvider;
 
     d.add_options()
         ("help,h", "print help")
-        ("pe", "specify PE input file")
-        ("mach-o", "specify mach-o input file")
-        ("ucache", "usercache")
-        ("raw", "raw input file")
-        ("list-files", "list the available files")
-        ("list-sections", "list all the avilable sections and files")
-        ("arch", program_options::value<string>(), "target architecture")
-        ("infile,f", program_options::value<string>(), "input file")
-        ("filter", program_options::value<string>(), "file filter expression");
+        ("arch,a", program_options::value<string>(), "target architecture")
+        ("file,f", program_options::value<string>(), "input file");
 
     program_options::store(
                 program_options::parse_command_line(argc, argv, d), vm);
 
     if( vm.count("help") ) {
         cout << d << endl;
-        return 0;
+        return 1;
+    }
+
+    ta = archFromVM(vm);
+    
+    // get the input binary filename
+    if( vm.count("file") ) {
+        inputFile = vm["file"].as<std::string>();
+
+        // create our executable wrapper
+        codeProvider = new ExecCodeProvider(inputFile, ta, false);
+        if(codeProvider->getError())
+        {
+            return 1;
+        }
+
+        // retrieve the detected architecture
+        ta = codeProvider->getArch();
+
+        //TODO: sanity checks on codeProvider
+
+    } else {
+        std::cout << "Must specify an input file" << std::endl;
+        std::cout << d << std::endl;
+        return 1;
     }
     
-    string inFilePath;
+    // print out info regarding the executable we just parsed
+    secVT   secs = codeProvider->getExecSections();
+    cout << "In file " << inputFile << endl;
+    cout << "found " << secs.size() << " +X sections" << endl;
+    cout << "------------------" << endl;
+    for(secVT::iterator it = secs.begin(); it != secs.end(); ++it) {
+        secAndArchT saa = *it;
+        TargetArch  ta = saa.first;
+        secPT       sp = saa.second;
+        lenAddrT    lat = sp.second; 
 
-    if( vm.count("infile" ) ) {
-        inFilePath = vm["infile"].as<string>();
-    }
-
-    if( inFilePath.size() == 0 ) {
-        cout << d << endl;
-        return -1;
-    }
-
-    string              fileFilter = ".*";
-
-    if( vm.count("filter") ) {
-        fileFilter = vm["filter"].as<string>();
-    }
-
-    regex               filter(fileFilter);
-    smatch              sm;
-
-    TargetArch          tarch = archFromVM(vm);
-    FileFormat          fmt = fmtFromVM(vm);
-    assert(fmt != Invalid);
-    assert(tarch.ta != INVALID);
-    ExecCodeProvider    ecp = ExecCodeProvider(inFilePath, fmt, tarch); 
-
-    if( vm.count("list-files") ) {
-        list<string>    fn = ecp.filenames();
-        cout << "files: " << endl;
-        for( list<string>::iterator i = fn.begin(); i != fn.end(); ++i ) {
-            if( regex_search(*i, sm, filter) ) {
-                cout << *i << endl;
-            }
-        }
-    }
-
-    if( vm.count("list-sections") ) {
-        list<string>    fn = ecp.filenames();
-        for( list<string>::iterator i = fn.begin(); i != fn.end(); ++i ) { 
-            secVT   secs = ecp.sections_in_file(*i);
-           
-            if( !regex_search(*i, sm, filter) ) {
-                continue;
-            }
-
-            cout << "in file " << *i << endl;
-            cout << "got " << secs.size() << " +X sections" << endl;
-            cout << "------------------" << endl;
-            for(secVT::iterator it = secs.begin(); it != secs.end(); ++it) {
-                secAndArchT saa = *it;
-                TargetArch  ta = saa.first;
-                secPT       sp = saa.second;
-                lenAddrT    lat = sp.second; 
-
-                cout << "Section of arch ";
-                cout << tarchToString(ta) << endl;
-                cout << "beginning at 0x" << 
-                    to_string<uint64_t>(lat.second, hex);
-                cout << " of size " << 
-                    to_string<uint64_t>(lat.first, dec) << endl;
-                cout << "------------------" << endl;
-            } 
-        }
-    }
+        cout << "Section of arch ";
+        cout << tarchToString(ta) << endl;
+        cout << "beginning at 0x" << 
+            to_string<uint64_t>(lat.second, hex);
+        cout << " of size 0x" << 
+            to_string<uint64_t>(lat.first, hex) << endl;
+        cout << "------------------" << endl;
+    } 
 
     return 0;
 }
