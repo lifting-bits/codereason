@@ -191,8 +191,7 @@ int main(int argc, char *argv[]) {
     TargetArch                              ta;
     ExecCodeProvider*                       codeProvider;
     std::string                             inputFile;
-    std::string                             filesToSearch;
-    std::string                             dbOutFile;
+    std::string                             blocksOutput;
     Condition                               *cs;
     int                                     jumps;
     unsigned int                            maxSize;
@@ -228,7 +227,7 @@ int main(int argc, char *argv[]) {
     }
 
     if( vm.count("blocks-out") ) {
-        dbOutFile = vm["blocks-out"].as<std::string>();
+        blocksOutput = vm["blocks-out"].as<std::string>();
     }
 
     if( vm.count("help") ) {
@@ -281,7 +280,7 @@ int main(int argc, char *argv[]) {
             std::cout << "Could not load conditions from file" << std::endl;
             return 0;
         }
-    } else if( dbOutFile.size() == 0) {
+    } else {
         std::cout << "Must specify input condition file" << std::endl;
         std::cout << d << std::endl;
         return 0;

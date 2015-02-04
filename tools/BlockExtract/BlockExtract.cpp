@@ -14,105 +14,59 @@
 using namespace std;
 using namespace boost;
 
-//print progress
-static
-void print_progress(unsigned int Total, unsigned int Done) {
-    const int tdot = 40;
-
-    double pctDone = ((double)Done)/((double)Total);
-
-    unsigned int print = floor(pctDone * tdot);
-
-    unsigned int i = 0;
-    std::cout << std::setprecision(5) << std::fixed << pctDone*100 << "[";
-    for( ; i < print; i++ ) {
-        std::cout << "=";
-    }
-    for( ; i < tdot; i++ ) {
-        std::cout << " ";
-    }
-
-    std::cout << "]\r";
-    std::cout.flush();
-
-    return;
-}
-
-FileFormat fmtFromVM(program_options::variables_map &vm) {
-    if( vm.count("pe") ) {
-        return PEFmt;
-    }
-
-    if( vm.count("mach") ) {
-        return MachOFmt;
-    }
-   
-    if( vm.count("raw") ) {
-        return RawFmt;
-    }
-
-    if( vm.count("ucache") ) {
-        return DyldCacheFmt;
-    }
-
-    return Invalid;
-}
-
+// parses the arch from the variable map, autodetect if not set
 TargetArch archFromVM(program_options::variables_map &vm) {
     TargetArch  tarch;
 
-    tarch.ta = INVALID;
+    if( vm.count("arch") ) {
+        std::string archStr = vm["arch"].as<std::string>();
+        std::transform(archStr.begin(), archStr.end(), archStr.begin(), ::tolower);
 
-    if( vm.count("architecture") ) {
-        std::string archStr = vm["architecture"].as<std::string>();
-
-        if( archStr == "X86" ) {
+        if( archStr  == "x86" ) {
             tarch.ta = X86;
-        } else if( archStr == "AMD64" ) {
+        } else if( archStr == "x64" ) {
             tarch.ta = AMD64;
-        } else if( archStr == "ARM" ) {
+        } else if( archStr == "arm" ) {
             tarch.ta = ARM;
             tarch.tm = WIDEARM;
-        } else if( archStr == "ARM-THUMB") {
+        } else if( archStr == "thumb") {
             tarch.ta = ARM;
             tarch.tm = THUMB;
-        } else if( archStr == "AMD64" ) {
-            tarch.ta = AMD64;
+        } else {
+            tarch.ta = INVALID;
         }
+
+    } else {
+        tarch.ta = AUTODETECT;
     }
 
     return tarch;
 }
 
+
+
 int main(int argc, char *argv[]) {
     program_options::options_description    d("options");
     program_options::variables_map          vm;
+    ExecCodeProvider*                       codeProvider;
     TargetArch                              ta;
     FileFormat                              fmt;
     string                                  inputFile;
     string                                  outputFile;
     string                                  filter(".*");
     unsigned int                            maxBlockSize;
+    bool                                    raw;
 
     d.add_options()
-        ("pe", "specify PE input file")
-        ("mach-o", "specify mach-o input file")
-        ("ucache", "usercache")
-        ("raw", "raw input file")
-        ("block-size,n", program_options::value<unsigned int>(), "max size in statements of blocks to search")
-        ("architecture,a", program_options::value<string>(), "architecture to search")
-        ("input,i", program_options::value<string>(), "input file")
-        ("filter", program_options::value<string>(), "file filter")
-        ("db-out", program_options::value<string>(), "DB output file")
-        ("version,v", "show version");
-
+        ("help,h", "print help")
+        ("file,f", program_options::value<std::string>(), "input file")
+        ("arch,a", program_options::value<std::string>(),"architecture - x86, x64, arm, thumb")
+        ("raw", "interpret input file as raw blob")
+        ("block-size", program_options::value<unsigned int>(), "max size in statements of blocks to search")
+        ("blocks-out", program_options::value<std::string>(), "seralize input to a DB");
+    
     program_options::store(
         program_options::parse_command_line(argc, argv, d), vm);
-
-    if( vm.count("version") ) {
-        cout << d << endl;
-        return 0;
-    }
 
     if( vm.count("block-size") ) {
       maxBlockSize = vm["block-size"].as<unsigned int>();
@@ -120,92 +74,95 @@ int main(int argc, char *argv[]) {
       maxBlockSize = 25;
     }
 
-    if( vm.count("input") ) {
-        inputFile = vm["input"].as<string>();
+    if( vm.count("raw") )
+    {
+        raw = true;
+    } else {
+        raw = false;
     }
 
-    if( vm.count("db-out") ) {
-        outputFile = vm["db-out"].as<string>();
+    if( vm.count("blocks-out") ) {
+        outputFile = vm["blocks-out"].as<string>();
     }
 
-    if( vm.count("filter") ) {
-        filter = vm["filter"].as<string>();
-    }
-
-    if( inputFile.size() == 0 || outputFile.size() == 0 ) {
+    if( outputFile.size() == 0 ) {
+        cout << "[ Error ] You must have an output file specified" << std::endl;
         cout << d << endl;
-        return -1;
+        return 1;
     }
 
     ta = archFromVM(vm);
-    fmt = fmtFromVM(vm);
 
-    if( fmt == Invalid ) {
-        cout << d << endl;
-        return -1;
+    // get the input binary filename
+    if( vm.count("file") ) {
+        inputFile = vm["file"].as<std::string>();
+
+        // create our executable wrapper
+        codeProvider = new ExecCodeProvider(inputFile, ta, raw);
+        if(codeProvider->getError())
+        {
+            return 1;
+        }
+
+        // retrieve the detected architecture
+        ta = codeProvider->getArch();
+
+        //TODO: sanity checks on codeProvider
+
+    } else {
+        std::cout << "Must specify an input file" << std::endl;
+        std::cout << d << std::endl;
+        return 1;
     }
 
     if( ta.ta == INVALID ) {
+        cout << "[ Error ] Invalid architecture" << std::endl;
         cout << d << endl;
-
-        return -1;
+        return 1;
     }
 
-    /* read executable sections that match the filter */
-    ExecCodeProvider    ecp(inputFile, fmt, ta);
-    regex               matcher(filter);
-    smatch              sm;
-    secVT               sections;
-    list<string>        fn = ecp.filenames();
-    list<BlockPtr>      blocksFound;
-   
-    for( list<string>::iterator i = fn.begin(); i != fn.end(); ++i ) {
-        if( regex_search(*i, sm, matcher) ) {
-            secVT   tmp = ecp.sections_in_file(*i);
-            
-            sections.insert(sections.begin(), tmp.begin(), tmp.end());
-        }
-    }
-    
-    void    *ctx = initDecodeLib2(ta, true, false);
-    ContextHandle *K = openFile(inputFile);
+    list<BlockPtr> blocksFound;
+    secVT sections = codeProvider->getExecSections();
+    void *ctx = initDecodeLib2(ta, true, false);
 
     if( ctx == NULL ) {
         cout << "Failed to initialize decoder library" << endl;
-        return -1;
+        return 1;
     }
 
-    int k = 0;
+    int k = 1;
+    cout << "Extracting blocks..." << std::endl;
+
     /* produce a block for every offset from the executable section */
     for( secVT::iterator i = sections.begin(); i != sections.end(); ++i ) {
         TargetArch  a = (*i).first;
         secPT       s = (*i).second;
         uint32_t    len = s.second.first;
-        uint32_t    baseAddr = s.second.second;
+        uint64_t    baseAddr = s.second.second;
         uint8_t     *secBasePtr = s.first;
 
-        cout << "section " << to_string<int>(k, dec);
+        cout << "Executable section " << to_string<int>(k, dec);
         cout << " of " << to_string<int>(sections.size(), dec) << endl;
-
         for( uint32_t i = 0; i < len; i++ ) {
             uint8_t     *curP = secBasePtr+i;
+            uint64_t    baseVA = baseAddr + i;
             bool        r;
             BlockPtr    bl;
 
-            print_progress(len, i);
             r = convertToOneBlock(  ctx,
                                     curP,
                                     (len-i),
-                                    baseAddr+i,
+                                    baseVA,
                                     a,
                                     maxBlockSize,
                                     bl);
             if( r ) {
-                //blocksFound.push_back(bl);
+                blocksFound.push_back(bl);
             } 
         }
 
-        cout << endl;
+        k++;
+        // print progress
     }
 
     cout << "all sections read" << endl;
