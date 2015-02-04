@@ -16,8 +16,8 @@ target_link_libraries(  BlockReader
                         RopLib 
                         IR 
                         getExecSections 
-                        PELib 
                         lua
+                        ${PE-PARSE_LIB}
                         ${VEX_LIB} 
                         ${CMAKE_THREAD_LIBS_INIT} 
                         ${Boost_LIBRARIES} )
@@ -29,8 +29,8 @@ target_link_libraries(  BlockReader
                         IR 
                         getExecSections 
                         MachOLib 
-                        PELib 
                         lua 
+                        ${PE-PARSE_LIB}
                         ${VEX_LIB} 
                         ${CMAKE_THREAD_LIBS_INIT} 
                         ${Boost_LIBRARIES} 

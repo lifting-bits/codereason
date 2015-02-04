@@ -44,26 +44,26 @@ int main(int argc, char *argv[]) {
     string                                  inputFile;
 
     d.add_options()
-        ("input,i", program_options::value<string>(), "input file")
-        ("version,v", "show version");
+        ("database,db", program_options::value<string>(), "input block database");
+
     program_options::store(
             program_options::parse_command_line(argc, argv, d), vm);
 
     /* try and read the input */  
-    if( vm.count("input") ) {
-        inputFile = vm["input"].as<string>();
+    if( vm.count("database") ) {
+        inputFile = vm["database"].as<string>();
     }
 
     if( inputFile.size() == 0 ) {
         cout << d << endl;
-        return -1;
+        return 1;
     }
     
     list<BlockPtr>  blocks;
     string          modName;
     if( !readFromFile(inputFile, modName, blocks) ) {
         cout << "Failure to read input file " << inputFile << endl;
-        return -1;
+        return 1;
     }
 
     cout << "read module " << modName << endl;
