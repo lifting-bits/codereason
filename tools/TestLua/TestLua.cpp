@@ -98,7 +98,7 @@ int vee_foo(lua_State *l) {
     return 0;
 }
 
-static const luaL_reg vee_meths[] = {
+static const luaL_Reg vee_meths[] = {
     {"getmem", vee_getmem},
     {"putmem", vee_putmem},
     {"getreg", vee_getreg},
@@ -109,7 +109,10 @@ static const luaL_reg vee_meths[] = {
 };
 
 void reg(lua_State *l) {
-    luaL_register(l, "vee", vee_meths);
+    lua_newtable(l);
+    luaL_setfuncs(l, vee_meths, 0);
+    lua_pushvalue(l, -1);
+    lua_setglobal(l, "vee");
     return;
 }
 

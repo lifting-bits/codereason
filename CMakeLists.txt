@@ -47,5 +47,5 @@ set(gtest_force_shared_crt ON)
 
 add_subdirectory(tools)
 add_subdirectory(libs)
-add_subdirectory(lua-5.1.4)
+add_subdirectory(lua-5.3.0)
 add_subdirectory(gtest-1.6.0)

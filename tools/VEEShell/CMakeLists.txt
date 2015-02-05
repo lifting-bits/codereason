@@ -1,4 +1,4 @@
-include_directories(${codeReason_SOURCE_DIR}/libs/IR ${codeReason_SOURCE_DIR}/libs/VEE ${codeReason_SOURCE_DIR}/libs/PELib ${codeReason_SOURCE_DIR}/lua-5.1.4/src)
+include_directories(${codeReason_SOURCE_DIR}/libs/IR ${codeReason_SOURCE_DIR}/libs/VEE ${codeReason_SOURCE_DIR}/libs/PELib ${codeReason_SOURCE_DIR}/lua-5.3.0/src)
 
 #link_directories(${codeReason_BINARY_DIR}/IR ${codeReason_BINARY_DIR}/VEE ${codeReason_BINARY_DIR}/PELib)
 link_directories(${Boost_LIBRARY_DIRS})

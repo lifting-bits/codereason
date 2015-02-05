@@ -22,7 +22,7 @@ int vee_hascalls(lua_State *l);
 int vee_nextblock(lua_State *l);
 int vee_setregclass(lua_State *l);
 
-static const luaL_reg vee_meths[] = {
+static const luaL_Reg vee_meths[] = {
     {"getmem", vee_getmem},
     {"putmem", vee_putmem},
     {"getreg", vee_getreg},
@@ -524,14 +524,17 @@ ScriptState *initScript(string scriptPath) {
     memset(ss, 0, sizeof(ScriptState));
     lua_State *s = luaL_newstate();
     luaL_openlibs(s);
-    luaL_register(s, "vee", vee_meths);
+    lua_newtable(s);
+    luaL_setfuncs(s, vee_meths, 0);
+    lua_pushvalue(s, -1);
+    lua_setglobal(s, "vee");
     lua_pushlightuserdata(s, ss);
     lua_setglobal(s, "__state");
     initVeeEnv(s);
     
     ss->S = s;
     int k = luaL_dofile(s, scriptPath.c_str());
-	if( k != 0 ) {
+    if( k != 0 ) {
 		lua_close(s);
 		s = NULL;
         free(ss);
@@ -547,7 +550,10 @@ ScriptState *initScriptFromString(string script) {
     memset(ss, 0, sizeof(ScriptState));
     lua_State *s = luaL_newstate();
     luaL_openlibs(s);
-    luaL_register(s, "vee", vee_meths);
+    lua_newtable(s);
+    luaL_setfuncs(s, vee_meths, 0);
+    lua_pushvalue(s, -1);
+    lua_setglobal(s, "vee");
     lua_pushlightuserdata(s, ss);
     lua_setglobal(s, "__state");
     initVeeEnv(s);

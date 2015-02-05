@@ -1,6 +1,6 @@
 PROTOBUF_GENERATE_CPP(IR_PROTO_SRCS IR_PROTO_HDRS ${codeReason_SOURCE_DIR}/libs/IR/IR.proto)
 
-include_directories(${codeReason_SOURCE_DIR}/libs/IR ${codeReason_SOURCE_DIR}/libs/IR ${codeReason_SOURCE_DIR}/libs/VEE ${codeReason_SOURCE_DIR}/libs/getExecSections ${codeReason_SOURCE_DIR}/lua-5.1.4/src ${codeReason_SOURCE_DIR}/libs/RopLib ${CMAKE_CURRENT_BINARY_DIR} ${codeReason_SOURCE_DIR}/libs/ExprParser )
+include_directories(${codeReason_SOURCE_DIR}/libs/IR ${codeReason_SOURCE_DIR}/libs/IR ${codeReason_SOURCE_DIR}/libs/VEE ${codeReason_SOURCE_DIR}/libs/getExecSections ${codeReason_SOURCE_DIR}/lua-5.3.0/src ${codeReason_SOURCE_DIR}/libs/RopLib ${CMAKE_CURRENT_BINARY_DIR} ${codeReason_SOURCE_DIR}/libs/ExprParser )
 
 link_directories(${LLVM_LIBDIR_RAW} ${Boost_LIBRARY_DIRS})
 add_definitions(-D__STDC_LIMIT_MACROS)
