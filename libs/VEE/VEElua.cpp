@@ -376,7 +376,7 @@ int vee_getreg(lua_State *l) {
 				k = cv.U64;
 				break;
 		}
-
+        //printf("register: 0x%x\n", k);
 		lua_pushinteger(l, k);
 	} else {
 		lua_pushnil(l);
@@ -402,20 +402,22 @@ int vee_putmem(lua_State *l) {
     return 0;
 }
 
+
 //either return a number or Nil
 int vee_getmem(lua_State *l) {
-    //get offset and width
+    // get offset and width
+    // TODO: offset should probably be 64bit!
     int offset;
     int width;
     VexExecutionState *vss;
+    
     //get offset and width
-
     offset = luaL_checkinteger(l, 2);
     width = luaL_checkinteger(l, 3);
     vss = (VexExecutionState *)lua_touserdata(l, 1);
-
 	ConstantValue cv = vss->getConstFromMem(offset, width);
-	if( cv.valueIsKnown ) {
+    
+    if( cv.valueIsKnown ) {
 		int k =0;
 		switch(cv.width) {
 			case 1:
@@ -431,7 +433,6 @@ int vee_getmem(lua_State *l) {
 				k = cv.U32;
 				break;
 		}
-
 		lua_pushinteger(l, k);
 	} else {
 		lua_pushnil(l);

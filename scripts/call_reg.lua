@@ -11,13 +11,12 @@ end
 
 function onPost(v)
     eip = vee.getreg(v, EIP, 32)
-    --ret_addr = vee.getmem(v, vee.getreg(v, ESP, 32), 32)
     
     if eip == nil then
         return false
     end
 
-    if eip == 80808080 then 
+    if eip == 80808080 and vee.getexit(v) == Call then 
         return true
     end
 
