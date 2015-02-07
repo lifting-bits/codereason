@@ -536,7 +536,9 @@ ScriptState *initScript(string scriptPath) {
     ss->S = s;
     int k = luaL_dofile(s, scriptPath.c_str());
     if( k != 0 ) {
-		lua_close(s);
+        printf("Error occured when calling luaL_dofile() Hint Machine 0x%x\n",k);
+        printf("Error: %s", lua_tostring(s,-1));
+        lua_close(s);
 		s = NULL;
         free(ss);
         ss = NULL;
