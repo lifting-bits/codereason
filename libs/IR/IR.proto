@@ -322,6 +322,9 @@ message DModule {
         IDFLAG = 20;
         ACFLAG = 21;
         FTOP = 22;
+        LDT32 = 23;
+        GDT32 = 24;
+        EMWARN32 = 25;
     }
 
     enum x86reg_64 {

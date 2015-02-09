@@ -266,6 +266,7 @@ void serializeRegister(Register r, DModule::Register *rs, int off) {
     }
 
     switch(r.arch.ta) {
+        case AMD64:
         case X86:
             switch(r.width) {
                 case 8:
@@ -389,14 +390,28 @@ void serializeRegister(Register r, DModule::Register *rs, int off) {
                             break;
                         case DFLAG:
                             rs->set_reg32(DModule::DFLAG);
+                            break;
                         case IDFLAG:
                             rs->set_reg32(DModule::IDFLAG);
+                            break;
                         case ACFLAG:
                             rs->set_reg32(DModule::ACFLAG);
+                            break;
                         case FTOP:
                             rs->set_reg32(DModule::FTOP);
+                            break;
+                        case LDT32:
+                            rs->set_reg32(DModule::LDT32);
+                            break;
+                        case GDT32:
+                            rs->set_reg32(DModule::GDT32);
+                            break;
+                        case EMWARN32:
+                            rs->set_reg32(DModule::EMWARN32);
+                            break;
                         default:
-                            assert(!"no reg to serialize");
+                            printf("Register 0x%08x\n", r.Reg32); 
+                            assert(!"X86: Serialization for this register is not implemented yet");
                     }
                     break;
                 case 64:
@@ -458,6 +473,9 @@ void serializeRegister(Register r, DModule::Register *rs, int off) {
                         case R15:
                             rs->set_reg64(DModule::R15);
                             break;
+                        default:
+                            printf("Register 0x%08x\n", r.Reg64); 
+                            assert(!"AMD64: Serialization for this register is not implemented yet");
                     }
                     break;
             }
@@ -594,6 +612,7 @@ Register deserializeRegister(const DModule::Register &rs) {
     }
 
     switch(r.arch.ta) {
+        case AMD64:
         case X86:
             switch(r.width) {
                 case 8:
@@ -722,6 +741,15 @@ Register deserializeRegister(const DModule::Register &rs) {
                             break;
                         case DModule::FTOP:
                             r.Reg32 = FTOP;
+                            break;
+                        case DModule::LDT32:
+                            r.Reg32 = LDT32;
+                            break;
+                        case DModule::GDT32:
+                            r.Reg32 = GDT32;
+                            break;
+                        case DModule::EMWARN32:
+                            r.Reg32 = EMWARN32;
                             break;
                     }
                     break;
