@@ -31,14 +31,14 @@ struct peCbIO
 
 // the callback run on each PE when searching for executable segments
 int peSecCb(void *                  N,
-            VA                      secBase, 
-            std::string             &secName, 
+            VA                      secBase,
+            std::string             &secName,
             image_section_header    s,
             bounded_buffer          *data)
 {
     // grab our in/out data struct
     peCbIO * inout = (peCbIO*)N;
-    
+
     // determine if this section is executable
     if(s.Characteristics & IMAGE_SCN_MEM_EXECUTE)
     {
@@ -46,7 +46,7 @@ int peSecCb(void *                  N,
         lenAddrT  pv = lenAddrT(data->bufLen, secBase);
         secPT p = secPT(data->buf, pv);
         secAndArchT n = secAndArchT(inout->peArch, p);
-        
+
         // add the section to our output vector
         inout->vec.push_back(n);
     }
@@ -56,8 +56,9 @@ int peSecCb(void *                  N,
 
 
 // given a linux ELF, extract any executable sections
-secVT ExecCodeProvider::getExecELFSections()
+secVT ExecCodeProvider::getExecELFSections(void)
 {
+
     ELFIO::elfio *reader = (ELFIO::elfio*)this->elfCtx;
     secVT found;
 
@@ -65,7 +66,7 @@ secVT ExecCodeProvider::getExecELFSections()
     for(int i = 0; i < seg_num; i++)
     {
         const ELFIO::segment* pseg = reader->segments[i];
-        
+
         // select only executable segments
         if(pseg->get_flags() & 1)
         {
@@ -76,7 +77,7 @@ secVT ExecCodeProvider::getExecELFSections()
             found.push_back(n);
         }
     }
-    
+
     // return the executable sections found
     return found;
 }
@@ -86,10 +87,10 @@ secVT ExecCodeProvider::getExecPESections() {
     peCbIO inout;
     parsed_pe * p = (parsed_pe*)this->peCtx;
     inout.peArch = this->arch;
-    
+
     // iterate over all PE sections and find executable segments
     IterSec(p, peSecCb, &inout);
-   
+
     // return the executable sections found
     return inout.vec;
 }
@@ -130,8 +131,9 @@ void findExecMach(MachO *m, secVT &vec, TargetArch t) {
     return;
 }*/
 
-static
-uint8_t *memMapFile(FILE *f, size_t len, size_t off) {
+static uint8_t *memMapFile(FILE *f, size_t len, size_t off)
+{
+
 	uint8_t *buf = (uint8_t *)malloc(len);
 	assert(buf != NULL);
 
@@ -225,9 +227,9 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len, 
                             uint32_t	addr = sec->addr;
                             uint32_t	bytesOff = sec->offset;
                             uint32_t	size = sec->size;
-                            uint8_t		*sourceBytes = 
+                            uint8_t		*sourceBytes =
                                 (uint8_t *) ( ((ptrdiff_t)buf) + bytesOff);
-                            //copy from sourceBytes 
+                            //copy from sourceBytes
 
                             uint8_t		*dstBytes = (uint8_t *) malloc(size);
 
@@ -248,30 +250,31 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len, 
                     break;
             }
 
-            //advance 
+            //advance
             cur = (uint8_t *) ( ((ptrdiff_t)cur) + cmd_sz);
         }
 	}
-    else 
+    else
     {
-		mach_header_64	*m64 = (mach_header_64 *)buf;
+		mach_header_64	*m64;
+        m64 = (( mach_header_64 *)buf);
 		if( this->arch.ta == AMD64 )
         {
             //walk over all the loader commands
-            struct load_command * cur = 
-            (struct load_command *) (((ptrdiff_t)buf) + 
+            struct load_command * cur =
+            (struct load_command *) (((ptrdiff_t)buf) +
             sizeof(mach_header_64));
 
             for( int i = 0; i < m64->ncmds; i++ )
             {
-                switch(cur->cmd) 
+                switch(cur->cmd)
                 {
                     case LC_SEGMENT_64:
                     {
                         segment_command_64	*sc = (segment_command_64 *) (((ptrdiff_t)cur) );
                         uint32_t	numSects = sc->nsects;
-                        section_64	*sec = (section_64 *)(((ptrdiff_t)sc)+sizeof(segment_command_64)); 
-                        
+                        section_64	*sec = (section_64 *)(((ptrdiff_t)sc)+sizeof(segment_command_64));
+
                         //iterate over the number of sections
                         for( int k = 0; k < numSects; k++ )
                         {
@@ -282,8 +285,8 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len, 
                                 uint32_t	bytesOff = sec->offset;
                                 uint32_t	size = sec->size;
                                 uint8_t		*sourceBytes = (uint8_t *) ( ((ptrdiff_t)buf) + bytesOff);
-                                
-                                //copy from sourceBytes 
+
+                                //copy from sourceBytes
                                 uint8_t     *dstBytes = (uint8_t *) malloc(size);
                                 assert(dstBytes != NULL);
                                 memcpy(dstBytes, sourceBytes, size);
@@ -320,12 +323,12 @@ secVT ExecCodeProvider::getExecMachSections()
     if( bswap_32(n->magic) == FAT_MAGIC )
     {
         // this is a FAT file
-        fat_arch	*fats = 
+        fat_arch	*fats =
             (fat_arch*)( ((ptrdiff_t)this->buf)+sizeof(fat_header) );
 
         // call getExecMachSectionsFromBuff on each
         uint32_t	numArches = bswap_32(n->nfat_arch);
-        for( int i = 0; i < numArches; i++ ) 
+        for( int i = 0; i < numArches; i++ )
         {
             uint32_t	fatsOff = bswap_32(fats[i].offset);
             uint8_t	*newBuff = (uint8_t*) ( ((ptrdiff_t)this->buf) + fatsOff);
@@ -335,10 +338,10 @@ secVT ExecCodeProvider::getExecMachSections()
             found.insert( found.end(), tmp.begin(), tmp.end() );
         }
 
-    } 
+    }
     else
     {
-        // not a FAT file, parse like normal 
+        // not a FAT file, parse like normal
         found = this->getExecMachSectionsFromBuff(this->buf, this->bufLen, this->arch);
     }
 #endif
@@ -350,8 +353,8 @@ secVT ExecCodeProvider::getExecMachSections()
 secVT ExecCodeProvider::getRaw()
 {
     secVT s;
-    
-    // the base address for raw blobs is set to 0x1000 
+
+    // the base address for raw blobs is set to 0x1000
     // as the VEX engine will complain if it starts at address 0
     lenAddrT    pv = lenAddrT(this->bufLen, 0x1000);
     secPT       p = secPT(this->buf, pv);
@@ -367,28 +370,28 @@ TargetArch ExecCodeProvider::convertPEArch(uint32_t machine_type)
 
     switch(machine_type)
     {
-        
+
         case IMAGE_FILE_MACHINE_I386:
         {
             result.ta = X86;
         }
             break;
-        
+
         case IMAGE_FILE_MACHINE_AMD64:
         {
             result.ta = AMD64;
         }
             break;
-        
+
         /* TODO: find some elegant way to switch between arm/thumb
-                 rather than just hardcoding thumb :| */     
+                 rather than just hardcoding thumb :| */
         case IMAGE_FILE_MACHINE_ARM:
         {
             result.ta = ARM;
             result.tm = THUMB;
         }
             break;
-        
+
         default:
         {
             result.ta = INVALID;
@@ -405,28 +408,28 @@ TargetArch ExecCodeProvider::convertELFArch(uint32_t machine_type)
 
     switch(machine_type)
     {
-        
+
         case EM_386:
         {
             result.ta = X86;
         }
             break;
-        
+
         case EM_X86_64:
         {
             result.ta = AMD64;
         }
             break;
-        
+
         /* TODO: find some elegant way to switch between arm/thumb
-                 rather than just hardcoding thumb :| */     
+                 rather than just hardcoding thumb :| */
         case EM_ARM:
         {
             result.ta = ARM;
             result.tm = THUMB;
         }
             break;
-        
+
         default:
         {
             result.ta = INVALID;
@@ -441,35 +444,35 @@ TargetArch ExecCodeProvider::convertMachArch(uint32_t machine_type)
 {
     TargetArch result;
 
-    switch(machine_type) 
+    switch(machine_type)
     {
         case CPU_TYPE_X86:
         {
             result.ta = X86;
         }
             break;
-        
+
         case (CPU_TYPE_X86_64 | CPU_ARCH_ABI64):
         {
             result.ta = AMD64;
         }
             break;
-        
+
         /* TODO: find some elegant way to switch between arm/thumb
-                 rather than just hardcoding thumb :| */     
+                 rather than just hardcoding thumb :| */
         case CPU_TYPE_ARM:
         {
             result.ta = ARM;
             result.tm = THUMB;
         }
             break;
-        
+
         default:
         {
             result.ta = INVALID;
         }
     }
-    
+
     return result;
 }
 // our super executable wrapper that abstracts everything away!
@@ -486,20 +489,20 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
 
     // open and map the executable
     FILE *fp = fopen(p.c_str(), "rb");
-    if( fp )
+    if(fp)
     {
         uint32_t len;
         fseek(fp, 0L, SEEK_END);
         len = ftell(fp);
         fseek(fp, 0L, SEEK_SET);
-        
+
         uint8_t	*fileBuf = memMapFile(fp, len, 0);
         assert(fileBuf != NULL);
-       
+
         // save relevant details of the mapped file
         this->buf = fileBuf;
         this->bufLen = len;
-        
+
         fclose(fp);
     }
     else
@@ -518,12 +521,12 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
         // we're not going to guess the architecture of raw data :|
         if(this->arch.ta == AUTODETECT)
         {
-            std::cout << "[Error] You must specify an architecture when using a raw blob" << std::endl; 
+            std::cout << "[Error] You must specify an architecture when using a raw blob" << std::endl;
             this->err = true;
             return;
         }
     }
-    
+
     // Windows Executable
     else if(memcmp(this->buf, "MZ", 2) == 0)
     {
@@ -533,9 +536,9 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
         // determine .exe's architecture
         parsed_pe * p = (parsed_pe*)this->peCtx;
         this->arch = this->convertPEArch(p->peHeader.nt.FileHeader.Machine);
-        
+
     }
-    
+
     // Linux ELF
     else if(memcmp(this->buf, "\x7f\x45\x4c\x46", 4) == 0)
     {
@@ -547,29 +550,44 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
         if(!reader->load(p.c_str()))
         {
             std::cout << "[Error] Cannot find or process ELF file "
-                      << p 
+                      << p
                       << std::endl;
             this->err = true;
             return;
         }
 
         // determine ELF's architecture
-        this->arch = this->convertELFArch(reader->get_machine()); 
-        
+        this->arch = this->convertELFArch(reader->get_machine());
+
     }
 
     // x86 or x64 MachO
-    else if((memcmp(this->buf, "\xce\xfa\xed\xfe", 4) == 0) || 
+    else if((memcmp(this->buf, "\xce\xfa\xed\xfe", 4) == 0) ||
             (memcmp(this->buf, "\xcf\xfa\xed\xfe", 4) == 0))
     {
         this->fmt = MachOFmt;
-       
+
         // TODO: get Mac samples and test stuff
         mach_header	*mhd = (mach_header *)this->buf;
         //if( bswap_32(m32->magic) == MH_CIGAM )
-        
-    }
-    
+                if (mhd->magic == MH_MAGIC || mhd->magic == MH_MAGIC_64) {
+
+            TargetArch t = convertMachArch(mhd->cputype);
+
+            // found our MachO, save the buffer location & arch
+            if(t.ta != INVALID) {
+                this->machoCtx = mhd;
+                this->arch = t;
+                               //return;
+            }
+               }
+               else {
+                       std::cout << "[Error] Unknown file magic" << std::endl;
+                       this->err = true;
+                       return;
+               }
+   }
+
     // FAT MachO Executable
     else if(memcmp(this->buf, "\xca\xfe\xba\xbe", 4) == 0)
     {
@@ -586,7 +604,7 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
             return;
         }
 
-        // select the the user specified architecure for this FAT MachO        
+        // select the the user specified architecure for this FAT MachO
         if(!selectArchForFAT(t))
         {
             std::cout << "[Error] Could not find specified architecture in MachO" << std::endl;
@@ -607,13 +625,13 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
 
 std::list<std::string> ExecCodeProvider::filenames(void) {
     std::list<std::string>  found;
-    
+
     switch(this->fmt) {
         //TODO: trim everything but the file name from the filepath for these
         case PEFmt:
         {
             //PE has one 'file name', and that is the file name of the module
-            //that we passed 
+            //that we passed
             found.push_back(this->fName);
         }
             break;
@@ -652,7 +670,7 @@ secVT ExecCodeProvider::getExecSections() {
             secs = this->getExecPESections();
         }
             break;
-        
+
         case ELFFmt:
         {
             secs = this->getExecELFSections();
@@ -664,7 +682,7 @@ secVT ExecCodeProvider::getExecSections() {
             secs = this->getExecMachSections();
         }
             break;
-        
+
         case RawFmt:
         {
             secs = this->getRaw();
