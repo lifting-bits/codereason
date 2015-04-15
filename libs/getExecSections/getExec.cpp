@@ -85,7 +85,7 @@ secVT ExecCodeProvider::getExecELFSections(void)
         }
     }
 
-    // return the executable sections found
+    /* return the executable sections found */
     return found;
 }
 
@@ -102,10 +102,10 @@ secVT ExecCodeProvider::getExecPESections()
     inout.peArch = this->arch;
 
 
-    // iterate over all PE sections and find executable segments
+    /* iterate over all PE sections and find executable segments */
     IterSec(p, peSecCb, &inout);
 
-    // return the executable sections found
+    /* return the executable sections found */
     return inout.vec;
 }
 
@@ -144,7 +144,7 @@ bool ExecCodeProvider::selectArchForFAT(TargetArch t)
     fat_header *n = (fat_header *)this->buf;
     fat_arch *fats = (fat_arch*)(((ptrdiff_t)this->buf)+sizeof(fat_header));
 
-    // make sure this is really a FAT
+    /* make sure this is really a FAT */
     if( bswap_32(n->magic) != FAT_MAGIC )
     {
         std::cerr << "[Error] This is not a FAT MachO" << std::endl;
@@ -200,7 +200,7 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len, 
 {
 	secVT found;
 
-    // find all executable sections in a 32bit MachO
+    /* find all executable sections in a 32bit MachO */
 	mach_header	*m32 = (mach_header *)buf;
 	if( this->arch.ta == X86 || this->arch.ta == ARM )
     {
@@ -266,7 +266,7 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len, 
 
 	    if(this->arch.ta == AMD64) {
 
-            //walk over all the loader commands
+            /* walk over all the loader commands */
             struct load_command * cur =
             (struct load_command *) (((ptrdiff_t)buf) +
             sizeof(mach_header_64));
@@ -575,7 +575,7 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
         uint8_t	*fileBuf = memMapFile(fp, len, 0);
         assert(fileBuf != NULL);
 
-        // save relevant details of the mapped file
+        /* save relevant details of the mapped file */
         this->buf = fileBuf;
         this->bufLen = len;
 
@@ -654,7 +654,7 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
 
             TargetArch t = convertMachArch(mhd->cputype);
 
-            // found our MachO, save the buffer location & arch
+            /* found our MachO, save the buffer location & arch */
             if(t.ta != INVALID) {
                 this->machoCtx = mhd;
                 this->arch = t;
@@ -716,11 +716,13 @@ std::list<std::string> ExecCodeProvider::filenames(void) {
     std::list<std::string>  found;
 
     switch(this->fmt) {
-        //TODO: trim everything but the file name from the filepath for these
+        /* TODO: trim everything but the file name from the filepath for these */
         case PEFmt:
         {
-            //PE has one 'file name', and that is the file name of the module
-            //that we passed
+            /*
+             * PE has one 'file name', and that is the file name of the module
+             * that we passed
+             */
             found.push_back(this->fName);
         }
             break;
