@@ -109,42 +109,6 @@ secVT ExecCodeProvider::getExecPESections()
     return inout.vec;
 }
 
-/*
-void findExecMach(MachO *m, secVT &vec, TargetArch t) {
-    const vector<segment_command *> &v = m->segments();
-
-    vector<segment_command *>::const_iterator it = v.begin();
-    FILE *f = fopen(m->filename().c_str(), "rb");
-    while( it != v.end() ) {
-        segment_command *s = *it;
-
-        if( s->maxprot | VM_PROT_EXECUTE ) {
-            uint32_t    off = s->fileoff + m->offset();
-            uint32_t    sz = s->filesize;
-
-            fseek(f, 0, SEEK_SET);
-            fseek(f, off, SEEK_SET);
-
-            uint8_t *buf = (uint8_t *)malloc(sz);
-
-            assert(buf != NULL);
-
-            size_t rd = fread(buf, sizeof(uint8_t), sz, f);
-
-            assert(rd == sz);
-
-            uint64_t    va = s->vmaddr;
-            lenAddrT    pv = lenAddrT(sz, va);
-            secPT       p = secPT(buf, pv);
-            secAndArchT at = secAndArchT(t,p);
-            vec.push_back(at);
-        }
-
-        ++it;
-    }
-    return;
-}*/
-
 static uint8_t *memMapFile(FILE *f, size_t len, size_t off)
 {
 
