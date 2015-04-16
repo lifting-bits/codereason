@@ -649,7 +649,6 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
         /* TODO: get Mac samples and test stuff */
         mach_header	*mhd = (mach_header *)this->buf;
 
-        //if( bswap_32(m32->magic) == MH_CIGAM ) FIXME: this should be done, I bet.
         if (mhd->magic == MH_MAGIC || mhd->magic == MH_MAGIC_64) {
 
             TargetArch t = convertMachArch(mhd->cputype);
@@ -658,7 +657,7 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
             if(t.ta != INVALID) {
                 this->machoCtx = mhd;
                 this->arch = t;
-                               //return;
+                return;
             }
         } else {
 
