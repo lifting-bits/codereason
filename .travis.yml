@@ -12,10 +12,10 @@ before_install:
 - cd capstone-3.0 && ./setup_capstone.sh && cd ..
 - cd libs/pe-parse && cmake . && make && cd ../../
 - cd vexTRUNK && make && cd ..
-- git clone https://github.com/Shogun771/MachO-Test-Binaries
+- git clone https://github.com/Shogun771/MachO-Test-Binaries gauntlet/
 script:
 - mkdir build && cd build && cmake .. && make -j2
-- cp bin/RopTool ../MachO-Test-Binaries && cd ../MachO-Test-Binaries && ./RunTests.sh
+- cd ../gauntlet && ./RunTests.sh
 matrix:
   allow_failures:
     - os: osx
