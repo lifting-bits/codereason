@@ -12,7 +12,7 @@ before_install:
 - cd capstone-3.0 && ./setup_capstone.sh && cd ..
 - cd libs/pe-parse && cmake . && make && cd ../../
 - cd vexTRUNK && make && cd ..
-- git clone https://github.com/Shogun771/MachO-Test-Binaries gauntlet/
+- git clone https://github.com/Shogun771/MachO-Test-Binaries gauntlet/MachO-Test-Binaries
 script:
 - mkdir build && cd build && cmake .. && make -j2
 - cd ../gauntlet && ./RunTests.sh
