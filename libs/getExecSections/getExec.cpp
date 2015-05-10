@@ -145,6 +145,7 @@ static uint8_t *memMapFile(FILE *f, size_t len, size_t off)
 bool ExecCodeProvider::selectArchForFAT(TargetArch t)
 {
     bool found = false;
+    TargetArch seekArch;
     fat_header *n = (fat_header *)this->buf;
     fat_arch *fats = (fat_arch*)(((ptrdiff_t)this->buf)+sizeof(fat_header));
 
@@ -158,7 +159,6 @@ bool ExecCodeProvider::selectArchForFAT(TargetArch t)
 
     /* find target arch; do the seeking now */
     uint32_t numArches = bswap_32(n->nfat_arch);
-
 
     for(int i = 0; i < numArches; i++) {
 
@@ -181,6 +181,7 @@ bool ExecCodeProvider::selectArchForFAT(TargetArch t)
             } else {
                 this->machoCtx = mhd;
                 this->arch = t;
+                found = true;
                 break;
             }
         }
@@ -211,12 +212,17 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len,
     /* find all executable sections in a 32bit MachO */
 	mach_header	*m32 = (mach_header *)buf;
 
-	if( this->arch.ta == X86 || this->arch.ta == ARM ) {
+	/*
+     * if( this->arch.ta == X86 || this->arch.ta == ARM )
+     *  FIXME, a proper check could be different (maybe using this isn't the
+     *  right decision in the long term)
+     */
+    if (m32->magic == MH_MAGIC) {
 
         /* walk over all the loader commands */
         uint8_t	*cur = (uint8_t *) (((ptrdiff_t)buf) + sizeof(mach_header));
 
-        uint32_t	numCmds = m32->ncmds;
+        uint32_t numCmds = m32->ncmds;
         for( int i = 0; i < numCmds; i++ ) {
 
             load_command *l = (load_command *)cur;
