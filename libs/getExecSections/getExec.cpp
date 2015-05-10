@@ -20,7 +20,8 @@ static inline unsigned int bswap_32(unsigned int x) {
 }
 
 static inline unsigned long long bswap_64(unsigned long long x) {
-	return (((unsigned long long)bswap_32(x&0xffffffffull))<<32) | (bswap_32(x>>32));
+	return (((unsigned long long)bswap_32(x & 0xffffffffull)) << 32) |
+        (bswap_32(x >> 32));
 }
 
 /* a small struct to get data in and out of the PE Section callback */
@@ -42,7 +43,10 @@ int peSecCb(void *  N, VA secBase, std::string  &secName,
     /* determine if this section is executable */
     if(s.Characteristics & IMAGE_SCN_MEM_EXECUTE)
     {
-        /* printf("Found executable section! 0x%llx\n", secBase); FIXME: take this away */
+        /*
+         * printf("Found executable section! 0x%llx\n", secBase); FIXME: take
+         * this away
+         */
         lenAddrT  pv = lenAddrT(data->bufLen, secBase);
         secPT p = secPT(data->buf, pv);
         secAndArchT n = secAndArchT(inout->peArch, p);
@@ -165,8 +169,10 @@ bool ExecCodeProvider::selectArchForFAT(TargetArch t)
         /* check if this a 32/64 bit little endian MachO */
         if(mhd->magic == MH_MAGIC || mhd->magic == MH_MAGIC_64) {
 
-            /* Populate the mach-o header and verify is the one we want for our target
-             * architechture. If he's the one, there is no need to continue.
+            /*
+             * Populate the mach-o header and verify is the one we want for our
+             * target architechture. If he's the one, there is no need to
+             * continue.
              */
             seekArch = convertMachArch(mhd->cputype);
 
@@ -185,6 +191,7 @@ bool ExecCodeProvider::selectArchForFAT(TargetArch t)
 
 /* TODO: clean this up, trim it down, remove unecessary args, rename
  * getExecMachSectionsFromBuff:
+ *
  *      locates the executable sections of a mach file from a binary buffer.
  *      returns a vector containing the found sections.
  *
@@ -196,14 +203,16 @@ bool ExecCodeProvider::selectArchForFAT(TargetArch t)
  * returns:
  *      secVT: a vector containing the executable sections for this buffer
  */
-secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len, TargetArch t)
+secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len,
+        TargetArch t)
 {
 	secVT found;
 
     /* find all executable sections in a 32bit MachO */
 	mach_header	*m32 = (mach_header *)buf;
-	if( this->arch.ta == X86 || this->arch.ta == ARM )
-    {
+
+	if( this->arch.ta == X86 || this->arch.ta == ARM ) {
+
         /* walk over all the loader commands */
         uint8_t	*cur = (uint8_t *) (((ptrdiff_t)buf) + sizeof(mach_header));
 
@@ -330,8 +339,9 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len, 
 
 /*
  * getExecMachSections:
- *      Parses a possible mach header and searches for the executable sections.
- *      this file might or might not be a FAT object, so parsin is done accordingly.
+ *  Parses a possible mach header and searches for the executable sections.
+ *  this file might or might not be a FAT object, so parsin is done
+ *  accordingly.
  *
  */
 secVT ExecCodeProvider::getExecMachSections()
@@ -361,23 +371,27 @@ secVT ExecCodeProvider::getExecMachSections()
             secVT tmp = this->getExecMachSectionsFromBuff(newBuff,
                     this->bufLen-fatsOff, this->arch);
 
-            found.insert( found.end(), tmp.begin(), tmp.end() );
+            found.insert(found.end(), tmp.begin(), tmp.end());
         }
 
     } else {
         /* not a FAT file, parse the MACH-o normally */
-        found = this->getExecMachSectionsFromBuff(this->buf, this->bufLen, this->arch);
+        found = this->getExecMachSectionsFromBuff(this->buf, this->bufLen,
+                                                  this->arch);
     }
 #endif
 
-    /* FIXME If this is windows, we return an uninitialized variable from the stack? */
+    /*
+     * FIXME If this is windows, we return an uninitialized variable from the
+     * stack?
+     */
     return found;
 }
 
 /*
  * getRaw
- *      returns the 'one' virtual segment of our raw blob. The virtual equivalent
- *      of the previous section-parsing methods.
+ *      returns the 'one' virtual segment of our raw blob. The virtual
+ *      equivalent of the previous section-parsing methods.
  *
  *  returns:
  *      secVT: a virtual section from this binary blob.
@@ -673,7 +687,10 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
 
         this->fmt = MachOFmt;
 
-        /* check if this is FAT MachO, and if it actually has more than one arch */
+        /*
+         * check if this is FAT MachO, and if it actually has more than one
+         * arch
+         */
         fat_header	*n = (fat_header *)this->buf;
         uint32_t numArches = bswap_32(n->nfat_arch);
         if(this->arch.ta == AUTODETECT && numArches > 1) {
@@ -691,7 +708,9 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
         /* select the the user specified architecure for this FAT MachO */
         if(!selectArchForFAT(t)) {
 
-            std::cout << "[Error] Could not find specified architecture in MachO" << std::endl;
+            std::cout << "[Error] Could not find specified architecture in MachO"
+                      << std::endl;
+
             this->err = true;
             return;
 
@@ -701,7 +720,9 @@ ExecCodeProvider::ExecCodeProvider(std::string p, TargetArch t, bool raw)
     /* error-handle unrecognized binaries */
     else {
 
-        std::cout << "[Error] Could not identify executable format" << std::endl;
+        std::cout << "[Error] Could not identify executable format"
+                  << std::endl;
+
         this->err = true;
 
     }
@@ -715,7 +736,9 @@ std::list<std::string> ExecCodeProvider::filenames(void) {
     std::list<std::string>  found;
 
     switch(this->fmt) {
-        /* TODO: trim everything but the file name from the filepath for these */
+        /*
+         * TODO: trim everything but the file name from the filepath for these
+         */
         case PEFmt:
         {
             /*

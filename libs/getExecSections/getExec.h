@@ -37,8 +37,8 @@ typedef std::vector<secAndArchT> secVT;
 
 /*
  * class ExecCodeProvider:
- *      the new interface for getting executable sections from PE, ELF, Mach-o and RAW file
- *      formats
+ *      the new interface for getting executable sections from PE, ELF, Mach-o
+ *      and RAW file formats
  */
 class ExecCodeProvider {
 private:
