@@ -212,12 +212,10 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len,
     /* find all executable sections in a 32bit MachO */
 	mach_header	*m32 = (mach_header *)buf;
 
-	/*
-     * if( this->arch.ta == X86 || this->arch.ta == ARM )
-     *  FIXME, a proper check could be different (maybe using this isn't the
-     *  right decision in the long term)
-     */
-    if (m32->magic == MH_MAGIC) {
+	/* if( this->arch.ta == X86 || this->arch.ta == ARM )
+        FIXME, a proper check could be different (maybe using this isn't the
+        right decision in the long term) */
+    if (m32->magic == MH_MAGIC && this->arch.ta == X86) {
 
         /* walk over all the loader commands */
         uint8_t	*cur = (uint8_t *) (((ptrdiff_t)buf) + sizeof(mach_header));
@@ -274,7 +272,7 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len,
             cur = (uint8_t *) ( ((ptrdiff_t)cur) + cmd_sz);
         }
 
-	} else {
+	} else if (m32->magic == MH_MAGIC_64 && this->arch.ta == AMD64) {
 
         mach_header_64	*m64;
         m64 = (( mach_header_64 *)buf);
@@ -339,7 +337,7 @@ secVT ExecCodeProvider::getExecMachSectionsFromBuff(uint8_t *buf, uint32_t len,
 
 	}
 
-	return found;
+    return found;
 }
 
 
@@ -367,7 +365,7 @@ secVT ExecCodeProvider::getExecMachSections()
         /* call getExecMachSectionsFromBuff on each
          * FIXME, do we really need to call this on each of these?
          */
-        uint32_t	numArches = bswap_32(n->nfat_arch);
+        uint32_t numArches = bswap_32(n->nfat_arch);
 
         for(int i = 0; i < numArches; i++) {
 
