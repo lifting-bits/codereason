@@ -1,22 +1,14 @@
 language: cpp
 cache: apt
 os:
-- osx
 - linux
 compiler:
 - gcc
 - clang
 before_install:
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo ./install_deps.sh; fi
-- if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update && brew upgrade cmake boost && brew install protobuf; fi
 script:
-- ./make.sh
-matrix:
-  allow_failures:
-    - os: osx
-  exclude:
-  - compiler: gcc
-    os: osx
+- "./make.sh"
 notifications:
   slack:
-    secure: bewLb+C2yiKmLUh0o/vftey+tl0XrmgkPi38uO+zbZ1kXJw/ByweJNrumgO/EJ4GDodb4cLHIUFuk4fNpkSUeV1CBSql7sm2cgQ9pIoQcdeEcANOeUmdepYwRh2xTOjRCeQnh0FYUkeyrQpzFwk1f+yybZrppw6dKu677v8CB1w=
+    secure: biLc1upxAuvnKJCNtvhnor8tAiqnydBPFm4yL2mDOq6AULKDpaipcnRrEVBEGSR2/DnIpZ25tUZ5fkl/HYExSJfZ5cAGypUhT53ER257BmQbqOEE/WC2ZCkScgIOopgPE8spaD+5xMo4CLHbnKUJ6Hu/1PMtH91GI6M1upyXa70=
