@@ -1,0 +1,7 @@
+Package: codereason
+Section: devel
+Priority: optional
+Architecture: amd64
+Maintainer: Andrew Ruef <andrew@trailofbits.com>
+Description: CodeReason Framework
+ CodeReason analyzes the semantics of native x86 and ARM code.

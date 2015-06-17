@@ -1,0 +1,3 @@
+EAX = 1
+EAX = Add[EAX, EBX]
+EIP = MEMREAD[ESP]

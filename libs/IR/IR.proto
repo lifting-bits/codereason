@@ -1,0 +1,435 @@
+message DModule {
+    required string fileName = 1;
+
+    enum TArchMajor {
+        TA_MA_INVALID = 0;
+        X86 = 1;
+        AMD64 = 2;
+        ARM = 3;
+        PPC32 = 4;
+        PPC64 = 5;
+        S390X = 6;
+    }
+
+    enum TArchMinor {
+        TA_MI_INVALID = 0;
+        WIDEARM = 1;
+        THUMB = 2;
+    }
+
+    message TArch {
+        required TArchMajor major = 1;
+        required TArchMinor minor = 2;
+    }
+
+    enum Ops {
+        Add = 0;
+        Sub = 1;
+        Mul = 2;
+        MulU = 3;
+        MulS = 4;
+        Or = 5;
+        And = 6;
+        Xor = 7;
+        Shl = 8;
+        Shr = 9;
+        Sar = 10;
+        CmpEQ = 11;
+        CmpNE = 12;
+        CmpLTS = 13;
+        CmpLTU = 14;
+        CmpLES = 15;
+        CmpLEU = 16;
+        Not = 17;
+        CF32toF64 = 18;
+        C64to8 = 19;
+        C32to8 = 20;
+        C64to16 = 21;
+        C64LOto32 = 22;
+        C64HIto32 = 23;
+        C32LOto16 = 24;
+        C32HIto16 = 25;
+        C16LOto8 = 26;
+        C16HIto8 = 27;
+        C16HLto32 = 28;
+        C1Uto32 = 29;
+        C1Uto8 = 30;
+        C8Uto32 = 31;
+        C8Sto32 = 32;
+        C8Uto16 = 33;
+        C8Sto16 = 34;
+        C8Uto64 = 35;
+        C16Uto64 = 36;
+        C16Uto32 = 37;
+        C16Sto32 = 38;
+        C32Uto64 = 39;
+        C32Sto64 = 40;
+        C32HLto64 = 41;
+        C32to1 = 42;
+        C64to1 = 43;
+        DivModS64to32 = 44;
+        DivModU64to32 = 45;
+        Sad8Ux4 = 46;
+        Add8x8 = 47;
+        Add16x4 = 48;
+        Add32x2 = 49;
+        Add64x1 = 50;
+        QAdd8Sx8 = 51;
+        QAdd16Sx4 = 52;
+        QAdd32Sx2 = 53;
+        QAdd64Sx1 = 54;
+        QAdd8Ux8 = 55;
+        QAdd16Ux4 = 56;
+        QAdd32Ux2 = 57;
+        QAdd64Ux1 = 58;
+        Sub8x8 = 59;
+        Sub16x4 = 60;
+        Sub32x2 = 61;
+        QSub8Sx8 = 62;
+        QSub16Sx4 = 63;
+        QSub32Sx2 = 64;
+        QSub64Sx1 = 65;
+        QSub8Ux8 = 66;
+        QSub16Ux4 = 67;
+        QSub32Ux2 = 68;
+        QSub64Ux1 = 69;
+        CmpEQ8x8 = 70;
+        CmpEQ16x4 = 71;
+        CmpEQ32x2 = 72;
+        CmpGT8Ux8 = 73;
+        CmpGT16Ux4 = 74;
+        CmpGT32Ux2 = 75;
+        CmpGT8Sx8 = 76;
+        CmpGT16Sx4 = 77;
+        CmpGT32Sx2 = 78;
+        ShlN8x8 = 79;
+        ShlN16x4 = 80;
+        ShlN32x2 = 81;
+        ShrN8x8 = 82;
+        ShrN16x4 = 83;
+        ShrN32x2 = 84;
+        SarN8x8 = 85;
+        SarN16x4 = 86;
+        SarN32x2 = 87;
+        Mul8x8 = 88;
+        Mul16x4 = 89;
+        Mul32x2 = 90;
+        Mul32Fx2 = 91;
+        MulHi16Ux4 = 92;
+        MulHi16Sx4 = 93;
+        PolyMul8x8 = 94;
+        InterleaveHI8x8 = 95;
+        InterleaveHI16x4 = 96;
+        InterleaveHI32x2 = 97;
+        InterleaveLO8x8 = 98;
+        InterleaveLO16x4 = 99;
+        InterleaveLO32x2 = 100;
+        InterleaveOddLanes8x8 = 101;
+        InterleaveEvenLanes8x8 = 102;
+        InterleaveOddLanes16x4 = 103;
+        InterleaveEvenLanes16x4 = 104;
+        Abs8x16 = 105;
+        Abs16x8 = 106;
+        Abs32x4 = 107;
+        Avg8Ux16 = 108;
+        Avg16Ux8 = 109;
+        Avg32Ux4 = 110;
+        Avg8Sx16 = 111;
+        Avg16Sx8 = 112;
+        Avg32Sx4 = 113;
+        Max8Sx16 = 114;
+        Max16Sx8 = 115;
+        Max32Sx4 = 116;
+        Max8Ux16 = 117;
+        Max16Ux8 = 118;
+        Max32Ux4 = 119;
+        Min8Sx16 = 120;
+        Min16Sx8 = 121;
+        Min32Sx4 = 122;
+        Min8Ux16 = 123;
+        Min16Ux8 = 124;
+        Min32Ux4 = 125;
+        Min8Ux8 = 126;
+        Min16Ux4 = 127;
+        Min32Ux2 = 128;
+        Max8Sx8 = 129;
+        Max16Sx4 = 130;
+        Max32Sx2 = 131;
+        Max8Ux8 = 132;
+        Max16Ux4 = 133;
+        Max32Ux2 = 134;
+        Min8Sx8 = 135;
+        Min16Sx4 = 136;
+        Min32Sx2 = 137;
+        QNarrow16Ux4 = 138;
+        QNarrow16Sx4 = 139;
+        QNarrow32Sx2 = 140;
+        UNSUP = 141;
+    }
+
+    enum ExType {
+        Const = 0;
+        RdTmp = 1;
+        Op = 2;
+        Load = 3;
+        Mux0X = 4;
+        CCall = 5;
+        Get = 6;
+    }
+
+    enum ValTy {
+        T_INVALID = 0;
+        T_I1 = 1;
+        T_I8 = 2;
+        T_I16 = 3;
+        T_I32 = 4;
+        T_I64 = 5;
+        T_I128 = 6;
+        T_F32 = 7;
+        T_F64 = 8;
+        T_F128 = 9;
+        T_V128 = 10;
+    }
+
+    message ConstantValue {
+        required ValTy  ty = 1;
+        required bool   isKnown = 2;
+        required int32  width = 3;
+        optional int64  val = 4;
+    }
+
+    message TVar {
+        required int32  varIdx = 1;
+        required int32  width = 2;
+        required ValTy  ty = 3; 
+    }
+    
+    message RegArray {
+        required int32  base = 1;
+        required ValTy  ty = 2;
+        required int32  numElems = 3;
+    }
+
+    message Expression {
+        required ExType     ty = 1;
+
+        optional Ops        Op_opcode = 2; 
+        repeated Expression Op_arguments = 3;
+
+        optional TVar       RdTmp_tval = 4;
+
+        optional ValTy      Load_loadTy = 5;
+        optional Expression Load_addr = 6;
+
+        optional Register   Get_register = 7;
+
+        optional ConstantValue  Const_cval = 8;
+
+        optional Expression Mux0X_condition = 9;
+        optional Expression Mux0X_iftrue = 10;
+        optional Expression Mux0X_iffalse = 11;
+
+        optional RegArray   Get_regarray = 12;
+
+        optional string     CCall_targetFunc = 13;
+        repeated Expression CCall_args = 14;
+
+        optional Expression Get_varpart = 15;
+        optional int32      Get_bias = 16;
+
+        optional TArch      Get_arch = 17;
+
+        optional int32      Get_offset = 18;
+    }
+
+    enum StType {
+        WrTmp = 0;
+        Store = 1;
+        CAS = 2;
+        Put = 3;
+        LLSC = 4;
+        Dirty = 5;
+        Exit = 6;
+        IMark = 7;
+        NOP = 8;
+        AbiHint = 9;
+        MBE = 10;
+    }
+
+    enum ExitType {
+        Fallthrough = 0;
+        Call = 1;
+        Return = 2;
+        UnknownExit = 3;
+    }
+
+    enum MemoryEnd {
+        BigEndian = 0;
+        LittleEndian = 1;
+    }
+
+    enum RegisterClass {
+        GenericRegister = 0;
+        StackPointer = 1;
+        ProgramCounter = 2;
+        Flags = 3;
+        InternalState = 4;
+    }
+
+    enum x86reg_8 {
+        AL = 0;
+        AH = 1;
+        BL = 2;
+        BH = 3;
+        CL = 4;
+        CH = 5;
+        DL = 6;
+        DH = 7;
+    }
+
+    enum x86reg_16 {
+        AX = 0;
+        BX = 1;
+        CX = 2;
+        DX = 3;
+        BP = 4;
+        SI = 5;
+        DI = 6;
+        SP = 7;
+    }
+
+    enum x86reg_32 {
+        EAX = 0;
+        EBX = 1;
+        ECX = 2;
+        EDX = 3;
+        EDI = 4;
+        ESI = 5;
+        EBP = 6;
+        ESP = 7;
+        EIP = 8;
+        CS = 9;
+        DS = 10;
+        ES = 11;
+        FS = 12;
+        GS = 13;
+        SS = 14;
+        OP = 15;
+        DEP1 = 16;
+        DEP2 = 17;
+        NDEP = 18;
+        DFLAG = 19;
+        IDFLAG = 20;
+        ACFLAG = 21;
+        FTOP = 22;
+        LDT32 = 23;
+        GDT32 = 24;
+        EMWARN32 = 25;
+    }
+
+    enum x86reg_64 {
+        RAX = 0;
+        RBX = 1;
+        RCX = 2;
+        RDX = 3;
+        RDI = 4;
+        RSI = 5;
+        RSP = 6;
+        RBP = 7;
+        RIP = 8;
+        R8 = 9;
+        R9 = 10;
+        R10 = 11;
+        R11 = 12;
+        R12 = 13;
+        R13 = 14;
+        R14 = 15;
+        R15 = 16;
+        GDT = 17;
+        LDT = 18;
+    }
+
+    enum armreg {
+        AR1 = 0;
+        AR2 = 1;
+        AR3 = 2;
+        AR4 = 3;
+        AR5 = 4;
+        AR6 = 5;
+        AR7 = 6;
+        AR8 = 7;
+        AR9 = 8;
+        AR10 = 9;
+        AR11 = 10;
+        AR12 = 11;
+        AR13 = 12;
+        AR14 = 13;
+        AR15 = 14;
+    }
+
+    message Register {
+        required TArch          arch = 1;
+
+        optional RegisterClass  regClass = 2;
+        optional int32          width = 3;
+        optional x86reg_8       Reg8 = 4;
+        optional x86reg_16      Reg16 = 5;
+        optional x86reg_32      Reg32 = 6;
+        optional x86reg_64      Reg64 = 7;
+        optional armreg         RegArm = 8;
+    }
+
+    message Statement {
+        required StType     ty = 1;
+
+        optional Expression WrTmp_RHS = 2;
+        optional TVar       WrTmp_tmpWritten = 3;
+
+        optional Expression Put_data = 4;
+        optional Register   Put_register = 5;
+
+        optional Expression Store_data = 6;
+        optional Expression Store_addr = 7;
+
+        optional ExitType   Exit_blockexit = 8;
+        optional Expression Exit_guardExp = 9;
+        optional Expression Exit_jmpTarget = 10;
+
+        optional Expression LLSC_addr = 11;
+        optional Expression LLSC_storedata = 12;
+        optional TVar       LLSC_result = 13;
+
+        optional Expression Dirty_addr = 14;
+        optional Expression Dirty_guard = 15;
+        repeated Expression Dirty_args = 16;
+        optional string     Dirty_calleename = 17;
+        optional TVar       Dirty_tmp = 18;
+
+        optional Expression CAS_storeAddr = 19;
+        optional Expression CAS_datahi = 20;
+        optional Expression CAS_datalo = 21;
+        optional Expression CAS_expectedhi = 22;
+        optional Expression CAS_expectedlo = 23;
+        optional TVar       CAS_oldhi = 24;
+        optional TVar       CAS_oldlo = 25;
+        optional MemoryEnd  CAS_end = 26;
+
+        optional MemoryEnd  LLSC_end = 27;
+
+        optional RegArray   Put_regarray = 28;
+        optional int32      Put_bias = 29;
+        optional Expression Put_varpart = 30;
+    }
+
+    message DBlock {
+        required int64      baseAddr = 1;
+        repeated TVar       temps = 2;
+        required TArch      arch = 3;
+        required int32      len = 4;
+        repeated Statement  stmts = 5;
+        required Expression next = 6; 
+        required ExitType   blockExit = 7;
+    }
+
+    repeated DBlock blocks = 2;
+}

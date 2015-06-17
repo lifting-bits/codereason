@@ -1,0 +1,2 @@
+EDI = MEMREAD[ESP]
+EIP = MEMREAD[Add[ESP, 4]]

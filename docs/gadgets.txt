@@ -1,0 +1,22 @@
+#1: pop eax
+    pop edi
+    pop esi
+    pop ebx
+    pop ebp
+    ret
+    encoding:
+
+    ret
+    encoding:
+
+    jmp [eax]
+    encoding:
+
+    neg eax
+    ret
+    encoding:
+
+    inc ebx
+    ret
+
+
