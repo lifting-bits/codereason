@@ -1,5 +1,6 @@
 # CodeReason
-[![Build Status](https://magnum.travis-ci.com/trailofbits/codereason.svg?token=T1UToSpCvaMxn511Cddb&branch=master)](https://magnum.travis-ci.com/trailofbits/codereason)
+[![Build Status](https://travis-ci.org/trailofbits/codereason.svg)](https://travis-ci.org/trailofbits/codereason)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/5509/badge.svg)](https://scan.coverity.com/projects/5509)
 
 CodeReason is a semantic binary code analysis framework and toolset. The tool RopTool discovers ROP gadgets in ARM, X86 and X86-64 binaries by providing pre- and post-conditions for the CPU and memory context using Lua scripts. Examples of other tools that can be created with CodeReason are available in the tools/ directory.
 
@@ -90,11 +91,12 @@ beginning at 0x401000 of size 0x5ae00
 [Semantic Analysis of Native Programs, introducing CodeReason](http://blog.trailofbits.com/2014/02/23/semantic-analysis-of-native-programs-introducing-codereason/)
 
 ## Authors
-Originally developed by Andrew Ruef under contract for DARPA Cyber Fast Track.
+Originally developed by [Andrew Ruef](https://github.com/awruef) under contract for DARPA Cyber Fast Track.
 
 Contributions made by:
-* Markus Gaasedelen
-* Jay Little
+* [Markus Gaasedelen](https://github.com/gaasedelen)
+* [Jay Little](https://github.com/computerality)
+* [Peter Goodman](https://github.com/pgoodman)
 * Nick Anderson
 * Santiago Torres
 * Luke Mladek
