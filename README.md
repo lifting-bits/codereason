@@ -54,7 +54,7 @@ RopTool takes in a binary and a Lua script as input and will output results to s
 
 Example usage:
 ```
-./build/bin/RopTool -f ../putty.exe -c scripts/call_reg.lua
+./build/bin/RopTool -a x64 -c ./scripts/x64/call_reg.lua -f ./tests/ELF/ls_x64
 ```
 
 ### BlockExtract

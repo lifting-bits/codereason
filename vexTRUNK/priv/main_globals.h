@@ -64,6 +64,7 @@ extern VexControl vex_control;
 
 
 /* vex_traceflags values */
+#define VEX_TRACE_OTHER  (1 << 8)  /* show panics and fails */
 #define VEX_TRACE_FE     (1 << 7)  /* show conversion into IR */
 #define VEX_TRACE_OPT1   (1 << 6)  /* show after initial opt */
 #define VEX_TRACE_INST   (1 << 5)  /* show after instrumentation */

@@ -274,7 +274,7 @@ bool runVEXOnBlobWithCallback(	DecodeLibState	*dls,
 	vta.preamble_function = NULL;
 
     vta.needs_self_check = needs_self_check;
-	vta.traceflags = 1; //0x10;
+	vta.traceflags = 0; //-1;
 	vta.finaltidy = NULL;
 
     vta.disp_cp_chain_me_to_slowEP = (const void *)disp_cp_chain_me_to_slowEP;

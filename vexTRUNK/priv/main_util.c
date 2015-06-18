@@ -266,8 +266,10 @@ __attribute__ ((noreturn))
 void vex_assert_fail ( const HChar* expr,
                        const HChar* file, Int line, const HChar* fn )
 {
-   vex_printf( "\nvex: %s:%d (%s): Assertion `%s' failed.\n",
+   if(vex_traceflags & VEX_TRACE_OTHER){
+     vex_printf( "\nvex: %s:%d (%s): Assertion `%s' failed.\n",
                file, line, fn, expr );
+   }
    (*vex_failure_exit)();
 }
 
@@ -275,7 +277,10 @@ void vex_assert_fail ( const HChar* expr,
 __attribute__ ((noreturn))
 void vpanic ( const HChar* str )
 {
-   vex_printf("\nvex: the `impossible' happened:\n   %s\n", str);
+   if(vex_traceflags & VEX_TRACE_OTHER)
+   {
+     vex_printf("\nvex: the `impossible' happened:\n   %s\n", str);
+   }
    (*vex_failure_exit)();
 }
 

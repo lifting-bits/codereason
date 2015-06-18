@@ -5420,8 +5420,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-               vex_printf("first_opcode == 0xD8\n");
+               if(vex_traceflags & VEX_TRACE_OTHER) {
+                 vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+                 vex_printf("first_opcode == 0xD8\n");
+               }
                goto decode_fail;
          }
       } else {
@@ -5679,8 +5681,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-               vex_printf("first_opcode == 0xD9\n");
+               if(vex_traceflags & VEX_TRACE_OTHER) {
+                 vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+                 vex_printf("first_opcode == 0xD9\n");
+               }
                goto decode_fail;
          }
 
@@ -6078,8 +6082,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-               vex_printf("first_opcode == 0xDA\n");
+               if(vex_traceflags & VEX_TRACE_OTHER) {
+                 vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+                 vex_printf("first_opcode == 0xDA\n");
+               }
                goto decode_fail;
          }
 
@@ -6242,8 +6248,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
             }
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-               vex_printf("first_opcode == 0xDB\n");
+               if(vex_traceflags & VEX_TRACE_OTHER) {
+                 vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+                 vex_printf("first_opcode == 0xDB\n");
+               }
                goto decode_fail;
          }
 
@@ -6425,8 +6433,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-               vex_printf("first_opcode == 0xDC\n");
+               if(vex_traceflags & VEX_TRACE_OTHER) {
+                 vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+                 vex_printf("first_opcode == 0xDC\n");
+               }
                goto decode_fail;
          }
 
@@ -6660,8 +6670,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
             }
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-               vex_printf("first_opcode == 0xDD\n");
+               if(vex_traceflags & VEX_TRACE_OTHER) {
+                 vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+                 vex_printf("first_opcode == 0xDD\n");
+               }
                goto decode_fail;
          }
       } else {
@@ -6793,8 +6805,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-               vex_printf("first_opcode == 0xDE\n");
+               if(vex_traceflags & VEX_TRACE_OTHER) {
+                 vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+                 vex_printf("first_opcode == 0xDE\n");
+               }
                goto decode_fail;
          }
 
@@ -6909,8 +6923,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
-               vex_printf("first_opcode == 0xDF\n");
+               if(vex_traceflags & VEX_TRACE_OTHER) {
+                 vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+                 vex_printf("first_opcode == 0xDF\n");
+               }
                goto decode_fail;
          }
 
@@ -31903,11 +31919,13 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
       a bug in disInstr. */
    if (guest_RIP_next_mustcheck 
        && guest_RIP_next_assumed != guest_RIP_curr_instr + dres.len) {
-      vex_printf("\n");
-      vex_printf("assumed next %%rip = 0x%llx\n", 
-                 guest_RIP_next_assumed );
-      vex_printf(" actual next %%rip = 0x%llx\n", 
-                 guest_RIP_curr_instr + dres.len );
+      if(vex_traceflags & VEX_TRACE_OTHER) {
+          vex_printf("\n");
+          vex_printf("assumed next %%rip = 0x%llx\n", 
+                     guest_RIP_next_assumed );
+          vex_printf(" actual next %%rip = 0x%llx\n", 
+                     guest_RIP_curr_instr + dres.len );
+      }
       vpanic("disInstr_AMD64: disInstr miscalculated next %rip");
    }
 
