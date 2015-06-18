@@ -1,6 +1,7 @@
 # CodeReason
 [![Build Status](https://travis-ci.org/trailofbits/codereason.svg)](https://travis-ci.org/trailofbits/codereason)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/5509/badge.svg)](https://scan.coverity.com/projects/5509)
+[![Slack Chat](http://pwning.herokuapp.com/badge.svg)](https://pwning.herokuapp.com/)
 
 CodeReason is a semantic binary code analysis framework and toolset. The tool RopTool discovers ROP gadgets in ARM, X86 and X86-64 binaries by providing pre- and post-conditions for the CPU and memory context using Lua scripts. Examples of other tools that can be created with CodeReason are available in the tools/ directory.
 
@@ -8,11 +9,12 @@ CodeReason is a semantic binary code analysis framework and toolset. The tool Ro
 CodeReason builds on Linux and OS X. Windows are builds currently broken. [Help us fix them](https://github.com/trailofbits/codereason/issues/32)!
 
 ### Requirements
-* [capstone](http://www.capstone-engine.org/) for printing disassembly
+* LibVEX from [Valgrind](http://valgrind.org/)
 * [gtest](https://code.google.com/p/googletest/) for unit tests
 * [lua](http://www.lua.org/home.html) for the user interface
 * [protobuf](https://developers.google.com/protocol-buffers/)
 * [boost](http://www.boost.org/)
+* [capstone](http://www.capstone-engine.org/) for pretty printing disassembly
 
 ### Ubuntu
 ```
