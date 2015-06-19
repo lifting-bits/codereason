@@ -86,8 +86,8 @@ struct OneBlockTransCtx
 {
 	BlockPtr        b;
 	unsigned long   curId;
-  TargetArch      ta;
-  unsigned int    maxSize;
+    TargetArch      ta;
+    unsigned int    maxSize;
 };
 
 class TranslateException {
@@ -141,11 +141,7 @@ __attribute__((noreturn))
 #endif
 void failure_throw(void) {
 	//throw an exception to get us back to someone that cares
-#if 0
-    doThrow();
-#else
 	throw TranslateException("failure_throw called");
-#endif
 }
 
 static
@@ -163,7 +159,8 @@ void eat_bytes( const HChar *bytes, SizeT nbytes )
 	return;
 }
 
-static UInt needs_self_check ( void* opaque, VexRegisterUpdates * vru, const VexGuestExtents* vge ) {
+static 
+UInt needs_self_check ( void* opaque, VexRegisterUpdates * vru, const VexGuestExtents* vge ) {
        return 0;
 }
 
@@ -210,40 +207,37 @@ IRSB *
 __cdecl
 #endif
 convertToOneBlockCb(void *ctx,
-				  IRSB *bb_in,
-				  const VexGuestLayout *vgl,
-				  const VexGuestExtents *vge,
-				  const VexArchInfo *vgi, // in new valgrind, currently used. TODO see if we should
-				  IRType			girty,
-				  IRType			hirty)
+                    IRSB *bb_in,
+				    const VexGuestLayout *vgl,
+				    const VexGuestExtents *vge,
+				    const VexArchInfo *vgi, // in new valgrind, currently used. TODO see if we should
+				    IRType girty,
+				    IRType hirty)
 {
-  OneBlockTransCtx	*obtc = (OneBlockTransCtx *)ctx;
-  if(bb_in->stmts_used < obtc->maxSize) {
-    VBlockPtr b = VBlockPtr(new VBlock(obtc->curId, obtc->ta));
-    b->buildFromIRSB(bb_in);
-    obtc->b = boost::static_pointer_cast<Block>(b);
-  }
+    OneBlockTransCtx *obtc = (OneBlockTransCtx *)ctx;
+
+    if(bb_in->stmts_used < obtc->maxSize) {
+        VBlockPtr b = VBlockPtr(new VBlock(obtc->curId, obtc->ta));
+        b->buildFromIRSB(bb_in);
+        obtc->b = boost::static_pointer_cast<Block>(b);
+    }
 
 	return bb_in;
 }
 
-/*
- */
-bool runVEXOnBlobWithCallback(	DecodeLibState	*dls,
-							    unsigned char	*b,
-								unsigned long	bufExtents,
-								uint64_t b_addr,
-								vexInstTy		func, 
-								void			*ctx,
-								unsigned long	*readBytes,
-								TargetArch arch)
+bool runVEXOnBlobWithCallback(DecodeLibState *dls,
+							  unsigned char	*b,
+                              unsigned long	bufExtents,
+                              uint64_t b_addr,
+                              vexInstTy	func,
+                              void *ctx,
+                              unsigned long	*readBytes,
+                              TargetArch arch)
 {
-	bool				didGood = false;
-	VexTranslateArgs	vta;
-	VexTranslateResult	vtr;
-	VexGuestExtents		vge;
-	//UChar				transbuf[N_TRANSBUF];
-	//Int					trans_used;
+	VexTranslateArgs vta;
+	VexTranslateResult vtr;
+	VexGuestExtents	vge;
+	bool didGood = false;
 
 	memset(&vta, 0, sizeof(VexTranslateArgs));
     memset(&vge, 0, sizeof(VexGuestExtents));	
@@ -251,24 +245,24 @@ bool runVEXOnBlobWithCallback(	DecodeLibState	*dls,
 	vta.instrument1 = func;
 	vta.callback_opaque = ctx;
 
-	vta.abiinfo_both    = dls->vbi;
-	vta.chase_into_ok   = chase_into_not_ok;
+	vta.abiinfo_both = dls->vbi;
+	vta.chase_into_ok = chase_into_not_ok;
 
-  vta.guest_bytes     = b;
-  vta.guest_bytes_addr = (Addr64)b_addr;
-	vta.guest_extents   = &vge;
+    vta.guest_bytes = b;
+    vta.guest_bytes_addr = (Addr64)b_addr;
+	vta.guest_extents = &vge;
 	vta.archinfo_guest = dls->vai_guest;
 	vta.archinfo_guest.endness = VexEndnessLE;
-  vta.arch_guest = (VexArch)dls->ti.tarch.ta;
+    vta.arch_guest = (VexArch)dls->ti.tarch.ta;
+    
+    assert(arch.ta == dls->ti.tarch.ta);
 
-  assert(arch.ta == dls->ti.tarch.ta);
-
-  vta.host_bytes      = NULL;
-  vta.host_bytes_size = 0;
-  vta.host_bytes_used = NULL;
-  vta.arch_host = vta.arch_guest;
-  vta.archinfo_host = dls->vai_guest;
-  vta.archinfo_host.endness = vta.archinfo_guest.endness;
+    vta.host_bytes = NULL;
+    vta.host_bytes_size = 0;
+    vta.host_bytes_used = NULL;
+    vta.arch_host = vta.arch_guest;
+    vta.archinfo_host = dls->vai_guest;
+    vta.archinfo_host.endness = vta.archinfo_guest.endness;
 
 	//vta.do_self_check = False;
 	vta.preamble_function = NULL;
@@ -284,22 +278,11 @@ bool runVEXOnBlobWithCallback(	DecodeLibState	*dls,
 
 	bool did_throw=false;
 	if( dls->do_throw ) {
-#if 0
-        bool entered = false;
-        setThrow();
-        if( entered == false ) { 
-            entered = true;
-            vtr = LibVEX_Translate(&vta);
-        } else {
-            did_throw = true;
-        }
-#else
 		try {
 			vtr = LibVEX_Translate(&vta);
 		} catch( TranslateException &te) {
 			did_throw = true;
 		}
-#endif
 	} else {
 		vtr = LibVEX_Translate(&vta);
 	}
@@ -318,27 +301,28 @@ bool runVEXOnBlobWithCallback(	DecodeLibState	*dls,
 	return didGood;
 }
 
-bool convertToOneBlock( void				  *ctx,
-					              unsigned char	*buf,
-					              unsigned long	bufLen,
-					              uint64_t baseAddr,
-					              TargetArch		arch,
-                        unsigned int  maxNumStmts,
-					              BlockPtr      &blockOut)
+bool convertToOneBlock( void *ctx,
+                        unsigned char *buf,
+                        unsigned long bufLen,
+                        uint64_t baseAddr,
+                        TargetArch arch,
+                        unsigned int maxNumStmts,
+                        BlockPtr &blockOut)
 {
-	bool				result=true;
-	DecodeLibState		*dls = (DecodeLibState*)ctx;
-	OneBlockTransCtx	obtc;
-	unsigned long		nbytes;
+	OneBlockTransCtx obtc;
+	unsigned long nbytes;
+	DecodeLibState *dls = (DecodeLibState*)ctx;
+	bool result = true;
 
 	obtc.curId = 0;
-  obtc.ta = arch;
-  obtc.maxSize = maxNumStmts;
+    obtc.ta = arch;
+    obtc.maxSize = maxNumStmts;
 
     //if this is ARM and it is THUMB, we need to perpetrate a hack
     if( arch.ta == ARM && arch.tm == THUMB ) {
         //bump baseAddr
         baseAddr |= 1;
+
         //bump the buf addr
         buf = (uint8_t *)( ((ptrdiff_t)buf) | 1 ); 
     }
@@ -355,6 +339,7 @@ bool convertToOneBlock( void				  *ctx,
     if(!(obtc.b)) {
       result = false;
     }
+   
     if( result ) {
         blockOut = obtc.b;
     }
