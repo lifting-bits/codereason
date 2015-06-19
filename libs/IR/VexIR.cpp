@@ -2071,8 +2071,17 @@ StatementPtr VBlock::statementBuilder(IRStmt *stmt, TargetArch arch) {
 	   case Ist_Exit:
 			st = new VStExit(shared_from_this(), stmt->Ist.Exit.jk, expressionBuilder(stmt->Ist.Exit.guard, arch, shared_from_this()), VExConstPtr(new VExConst(shared_from_this(), stmt->Ist.Exit.dst)));
 			break;
-
-		   //default:
+       
+       // TODO: These are new and need to be implemented
+       case Ist_LoadG:
+            //std::cout << "Hit Ist_LoadG!\n";
+            break;
+       
+       case Ist_StoreG:
+            //std::cout << "Hit Ist_StoreG!\n";
+            break;
+		   
+           //default:
 		   //FREAK OUT
 	}
     
@@ -2207,8 +2216,12 @@ void VBlock::buildFromIRSB(IRSB *bb) {
 		IRStmt		    *vst = bb->stmts[i];
 		StatementPtr    st = this->statementBuilder(vst, this->CodeTarget);
 
-		assert(st != NULL);
-
+        //FIXME: statementBuilder failed if this is NULL, this basically will
+        //       is silently ignoring it
+		//assert(st != NULL);
+        if(st == NULL)
+            continue;
+        
         VStWrTmpPtr  wrt = dynamic_pointer_cast<VStWrTmp>(st);
 		if( wrt != NULL ) {
 			//if this writes to a temp, it defines a new temp

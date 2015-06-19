@@ -324,7 +324,7 @@ bool convertToOneBlock( void *ctx,
         baseAddr |= 1;
 
         //bump the buf addr
-        buf = (uint8_t *)( ((ptrdiff_t)buf) | 1 ); 
+        buf = (uint8_t *)(((ptrdiff_t)buf) | 1 );
     }
 
     result = runVEXOnBlobWithCallback(  dls, 

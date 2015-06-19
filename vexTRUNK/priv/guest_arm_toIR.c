@@ -17562,6 +17562,7 @@ DisResult disInstr_THUMB_WRK (
       the instruction word, first for 16-bit insns, then for 32-bit
       insns. */
 
+#if 0
    /* --- BEGIN ITxxx optimisation analysis --- */
    /* This is a crucial optimisation for the ITState boilerplate that
       follows.  Examine the 9 halfwords preceding this instruction,
@@ -17647,6 +17648,7 @@ DisResult disInstr_THUMB_WRK (
       }
    }
    /* --- END ITxxx optimisation analysis --- */
+#endif
 
    /* Generate the guarding condition for this insn, by examining
       ITSTATE.  Assign it to condT.  Also, generate new
