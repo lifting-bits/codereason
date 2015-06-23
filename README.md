@@ -24,7 +24,8 @@ sudo ./install_deps.sh
 
 ### OS X
 ```
-brew update && brew install cmake boost protobuf
+brew update && brew install cmake boost protobuf git
+sudo ./install_vex.sh
 ./make.sh
 ```
 
