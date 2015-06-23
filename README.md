@@ -19,19 +19,13 @@ CodeReason builds on Linux and OS X. Windows are builds currently broken. [Help 
 ### Ubuntu
 ```
 sudo ./install_deps.sh
-cd capstone-3.0.3 && ./setup_capstone.sh && cd ..
-cd libs/pe-parse && cmake . && make && cd ../../
-cd vexTRUNK && make && cd ..
-mkdir build && cd build && cmake .. && make -j8
+./make.sh
 ```
 
 ### OS X
 ```
 brew update && brew install cmake boost protobuf
-cd capstone-3.0.3 && ./setup_capstone.sh && cd ..
-cd libs/pe-parse && cmake . && make && cd ../../
-cd vexTRUNK && make && cd ..
-mkdir build && cd build && cmake .. && make -j8
+./make.sh
 ```
 
 Several helper scripts are available: `install_deps.sh` installs Ubuntu dependencies, `make.sh` creates a full build, `recompile.sh` recompiles CodeReason, and `package.sh` creates a debian package. See our [Travis-CI configuration](https://github.com/trailofbits/codereason/blob/master/.travis.yml) for more details about building.

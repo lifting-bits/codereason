@@ -11,10 +11,6 @@ cmake .
 make
 cd ../../
 
-# make vex
-cd vexTRUNK
-make
-cd ..
 
 # make CodeReason
 mkdir build

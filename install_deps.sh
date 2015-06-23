@@ -7,4 +7,10 @@ fi
 echo "Installing dependencies"
 
 sudo apt-get update -qq
-sudo apt-get install build-essential gcc g++ make cmake libboost-dev libprotobuf-dev protobuf-compiler libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev
+sudo apt-get install build-essential gcc g++ make cmake libboost-dev libprotobuf-dev protobuf-compiler libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev git
+
+git clone https://github.com/trailofbits/libvex.git
+cd libvex
+sudo make install
+cd ..
+rm -rf libvex

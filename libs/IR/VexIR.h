@@ -4,12 +4,12 @@
 #include "BasicIR.h"
 
 extern "C" {
-#include <libvex_guest_x86.h>
-#include <libvex_guest_amd64.h>
-#include <libvex_basictypes.h>
-#include <libvex_guest_offsets.h>
-#include <libvex_emnote.h>
-#include <libvex.h>
+#include <vex/libvex_guest_x86.h>
+#include <vex/libvex_guest_amd64.h>
+#include <vex/libvex_basictypes.h>
+#include <vex/libvex_guest_offsets.h>
+#include <vex/libvex_emnote.h>
+#include <vex/libvex.h>
 }
 
 Register guestOffsetToRegister(int guestOffset, unsigned long width, TargetArch arch);

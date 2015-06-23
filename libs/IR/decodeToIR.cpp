@@ -36,13 +36,13 @@ void disp_cp_chain_me_to_fastEP() {}
 void disp_cp_xindir() {}
 void disp_cp_xassisted() {}
 
-static Bool chase_into_not_ok ( void* opaque, Addr dst ) { return False; }
+static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) { return false; }
 //static Bool chase_into_not_ok ( void* opaque, Addr64 dst ) { return False; }
 #ifdef _MSC_BUILD
 //typedef IRSB *(__cdecl *vexInstTy)(void *,IRSB *,VexGuestLayout *,VexGuestExtents *,IRType,IRType);
 typedef IRSB *(__cdecl *vexInstTy)(void *,IRSB *,const VexGuestLayout *,const VexGuestExtents *,const VexArchInfo*, IRType,IRType);
 #else
-typedef IRSB *(*vexInstTy)(void *,IRSB *,const VexGuestLayout *,const VexGuestExtents *,const VexArchInfo*, IRType,IRType);
+typedef IRSB *(*vexInstTy)(void *,IRSB *,VexGuestLayout *,VexGuestExtents *,VexArchInfo*, IRType,IRType);
 #endif
 
 struct TransContext
@@ -145,22 +145,13 @@ void failure_throw(void) {
 }
 
 static
-void log_bytes ( const HChar* bytes, SizeT nbytes )
-{
-    //char b[] = { 'V', 'L', 'O', 'G', '>', ' '};
-    //fwrite ( b, 1, sizeof(b), stdout );
-    fwrite ( bytes, 1, nbytes, stdout );
-    return;
-}
-
-static
-void eat_bytes( const HChar *bytes, SizeT nbytes ) 
+void eat_bytes( HChar *bytes, Int nbytes )
 {
     return;
 }
 
 static 
-UInt needs_self_check ( void* opaque, VexRegisterUpdates * vru, const VexGuestExtents* vge ) {
+UInt needs_self_check ( void* opaque, VexGuestExtents* vge ) {
        return 0;
 }
 
@@ -182,17 +173,9 @@ void initVex(DecodeLibState *dls, bool do_throw, bool dbg_spew) {
 
     dls->do_throw = do_throw;
     if( do_throw ) {
-        if( dbg_spew ) {
-            LibVEX_Init(failure_throw, log_bytes, 1, &dls->vcon);
-        } else {
-            LibVEX_Init(failure_throw, eat_bytes, 1, &dls->vcon);
-        }
+      LibVEX_Init(failure_throw, eat_bytes, 0, false, &dls->vcon);
     } else {
-        if( dbg_spew ){
-            LibVEX_Init(failure_exit, log_bytes, 1, &dls->vcon);
-        } else {
-            LibVEX_Init(failure_exit, eat_bytes, 1, &dls->vcon);
-        }
+      LibVEX_Init(failure_exit, eat_bytes, 0, false, &dls->vcon);
     }
 
     return;
@@ -208,9 +191,9 @@ __cdecl
 #endif
 convertToOneBlockCb(void *ctx,
                     IRSB *bb_in,
-                    const VexGuestLayout *vgl,
-                    const VexGuestExtents *vge,
-                    const VexArchInfo *vgi, // in new valgrind, currently used. TODO see if we should
+                    VexGuestLayout *vgl,
+                    VexGuestExtents *vge,
+                    VexArchInfo *vgi, // in new valgrind, currently used. TODO see if we should
                     IRType girty,
                     IRType hirty)
 {
@@ -271,10 +254,10 @@ bool runVEXOnBlobWithCallback(DecodeLibState *dls,
     vta.traceflags = 0; //-1;
     vta.finaltidy = NULL;
 
-    vta.disp_cp_chain_me_to_slowEP = (const void *)disp_cp_chain_me_to_slowEP;
-    vta.disp_cp_chain_me_to_fastEP = (const void *)disp_cp_chain_me_to_fastEP;
-    vta.disp_cp_xindir = (const void *)disp_cp_xindir;
-    vta.disp_cp_xassisted = (const void *)disp_cp_xassisted;
+    vta.disp_cp_chain_me_to_slowEP = (void *)disp_cp_chain_me_to_slowEP;
+    vta.disp_cp_chain_me_to_fastEP = (void *)disp_cp_chain_me_to_fastEP;
+    vta.disp_cp_xindir = (void *)disp_cp_xindir;
+    vta.disp_cp_xassisted = (void *)disp_cp_xassisted;
 
     bool did_throw=false;
     if( dls->do_throw ) {
@@ -357,21 +340,6 @@ void * initDecodeLib(TargetInfo ti, bool do_throw, bool dbg_spew) {
 void * initDecodeLib2(TargetArch ta, bool do_throw, bool dbg_spew) {
     DecodeLibState  *dls = new DecodeLibState();
     TargetInfo      ti;
-
-    if( ta.ta == X86 ) {
-        ti.guestHWcaps =
-            VEX_HWCAPS_X86_MMXEXT|VEX_HWCAPS_X86_SSE1|VEX_HWCAPS_X86_SSE2|VEX_HWCAPS_X86_SSE3;
-        ti.hostHWcaps =
-            VEX_HWCAPS_X86_MMXEXT|VEX_HWCAPS_X86_SSE1|VEX_HWCAPS_X86_SSE2|VEX_HWCAPS_X86_SSE3;
-    } else if( ta.ta == ARM ) {
-        ti.guestHWcaps = 5|VEX_HWCAPS_ARM_VFP3;
-        ti.hostHWcaps =
-            VEX_HWCAPS_X86_MMXEXT|VEX_HWCAPS_X86_SSE1|VEX_HWCAPS_X86_SSE2|VEX_HWCAPS_X86_SSE3;
-    } else {
-        ti.guestHWcaps = 0;
-        ti.hostHWcaps = 0;
-    }
-
     ti.maxInstructions = 99;
     ti.chaseThreshold = 10;
     ti.opLevel = FullOpt;

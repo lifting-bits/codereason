@@ -1,13 +1,13 @@
 #include "VEE.h"
 
 extern "C" {
-#include <libvex_basictypes.h>
-#include <libvex_guest_offsets.h>
-#include <libvex_emnote.h>
-#include <libvex.h>
-#include <libvex_guest_x86.h>
-#include <libvex_guest_amd64.h>
-#include <libvex_guest_arm.h>
+#include <vex/libvex_basictypes.h>
+#include <vex/libvex_guest_offsets.h>
+#include <vex/libvex_emnote.h>
+#include <vex/libvex.h>
+#include <vex/libvex_guest_x86.h>
+#include <vex/libvex_guest_amd64.h>
+#include <vex/libvex_guest_arm.h>
 }
 
 using namespace std;
