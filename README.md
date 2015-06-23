@@ -9,7 +9,7 @@ CodeReason is a semantic binary code analysis framework and toolset. The tool Ro
 CodeReason builds on Linux and OS X. Windows are builds currently broken. [Help us fix them](https://github.com/trailofbits/codereason/issues/32)!
 
 ### Requirements
-* LibVEX from [Valgrind](http://valgrind.org/)
+* [LibVEX](https://github.com/trailofbits/libvex) with custom patches to support static analysis
 * [gtest](https://code.google.com/p/googletest/) for unit tests
 * [lua](http://www.lua.org/home.html) for the user interface
 * [protobuf](https://developers.google.com/protocol-buffers/)
