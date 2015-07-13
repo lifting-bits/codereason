@@ -9,4 +9,4 @@ echo "Installing dependencies"
 sudo apt-get update -qq
 sudo apt-get install build-essential gcc g++ make cmake libboost-dev libprotobuf-dev protobuf-compiler libboost-thread-dev libboost-system-dev libboost-filesystem-dev libboost-program-options-dev libboost-date-time-dev libboost-regex-dev git
 
-sudo ./install_vex.sh
+./install_vex.sh

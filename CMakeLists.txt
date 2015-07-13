@@ -13,12 +13,15 @@ find_package(Threads REQUIRED)
 find_package(Protobuf REQUIRED)
 
 #find the place where VEX lives ... 
-#find_path(VEX_INCLUDE_DIR libvex.h REQUIRED PATHS ./vexTRUNK/pub NO_DEFAULT_PATH)
+#find_path(VEX_INCLUDE_DIR libvex.h REQUIRED PATHS ./libvex/VEX/pub NO_DEFAULT_PATH)
 
 #define capstone's includes
 set(CAPSTONE_SRC_DIR "./capstone-3.0.3/capstone-3.0.3")
 set(PE-PARSE_SRC_DIR "./libs/pe-parse/parser-library")
 set(ELFIO_INCLUDE_DIR "./libs/elfio")
+
+# libvex defines
+set(LIBVEX_BUILD_DIR "./libvex/build")
 
 #include_directories(${VEX_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
@@ -29,12 +32,12 @@ IF(WIN32)
     #on win32, vex is pre-built
     #find_library(VEX_LIB VEX.lib HINTS ./build_for_windows/lib32 NO_DEFAULT_PATH)
 ELSE(WIN32)
-    find_library(VEX_LIB libvex.so)
+    find_library(VEX_LIB libvex.so HINTS ${LIBVEX_BUILD_DIR} NO_DEFAULT_PATH)
     find_library(CAPSTONE_LIB libcapstone.a HINTS ${CAPSTONE_SRC_DIR} NO_DEFAULT_PATH)
     find_library(PE-PARSE_LIB libpe-parser-library.a HINTS ${PE-PARSE_SRC_DIR} NO_DEFAULT_PATH)
 ENDIF(WIN32)
 
-add_definitions(-D__i386__)
+#add_definitions(-D__i386__)
 # gtest fix on osx
 IF(APPLE)
 add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)

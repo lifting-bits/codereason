@@ -2,6 +2,5 @@
 
 git clone https://github.com/trailofbits/libvex.git
 cd libvex
-sudo make install
+CFLAGS=-g VEX_INSTALL_DIR=./build make install
 cd ..
-rm -rf libvex
