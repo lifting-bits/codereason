@@ -1,2 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar cq libpe-parser-library.a  CMakeFiles/pe-parser-library.dir/buffer.cpp.o CMakeFiles/pe-parser-library.dir/parse.cpp.o
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libpe-parser-library.a
