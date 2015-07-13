@@ -9,9 +9,6 @@ before_install:
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo ./install_deps.sh; fi
 script:
 - "./make.sh"
-notifications:
-  slack:
-    secure: G6bdS8XGP/c41kWuBi79sbmJblRxHggA77hiGI5HMIkWphC0zcv19N8DobLLLoC7nvVt3nvBlh+O10QM/z3MimWIYsM/tecS4of8C/+dreqPGyBEoVhi2IUN6CQI0gKXAQ9g6Lo8l7wMNE2n0HgFN/dC3N7pgOO4K3sF20lUD/o=
 env:
   global:
    - secure: "VxSxKAmeeMNhtVOjCmVyEqTeiTzHLK/XNCxad93rhu9sMnkKiTbSUxrbjxZ1laGX2JXsIwrhYdcyIknqCIkwYbuOi4AE1gyP6slrNmd/rHQRNUVpaHoPzD5B3083oEFY1mSn/eoDmgrcfTPPCALYjadzmk3IviMVkF9lyVSyu8n0kwW3s0oT+Q4gkVuEZ1VSPcJ7BU4vcny6m3wFMbRh+4rP62j9MKVeT3gUrv+rg89ySxd7yIj6HiU2nnNblkYVSoJeCVqsYl/0iTXBD3CwPeZc7c62uTabIjIcWx9z1r5iniWIH7wpwokYpNF4EMCTOKGtBQHn4OPwLlil2wA23DtYYqTZc3QHSAlZEHVLWpZpxlgbndsLG6MHOy6vsaR6Oxf8k6+ZOcSRP8D5T9nM2nYdf9llE5oNgrYGHWN1ZrIHakWUvLE+kx5A7qZG7mcbJqr5YIOrozt5YOWkbvZZjFUaAYt4fzHrMdSFV8c4Yay9Qvqv82aIJiE24R9cXpwek5+h5mAFbD6OvfH3YA40TKdVoY8JHPJ1j9NLPfcIrzKdnwyeh31iys8CNqfKUfda11kG88rm5Eo1VWEn7s86QlV40jW101Q4G9uy0yv53H10mhPnSuaWHENd/t9Kr+/hVK55bc2IRiMZ2z03icXCt2KrCSxkazWpwEtLGlquqm0="
@@ -22,6 +19,5 @@ addons:
       description: "Build submitted via Travis CI"
     notification_email: dan@trailofbits.com
     build_command_prepend: "sudo ./install_deps.sh"
-    build_command:   "./make.sh"
-    branch_pattern: master
-
+    build_command: "./make.sh"
+    branch_pattern: coverity
