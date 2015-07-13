@@ -25,7 +25,7 @@ sudo ./install_deps.sh
 ### OS X
 ```
 brew update && brew install cmake boost protobuf git
-sudo ./install_vex.sh
+./install_vex.sh
 ./make.sh
 ```
 
@@ -57,7 +57,7 @@ BlockExtract reads in a binary and outputs a database file containing block info
 
 Example usage:
 ```
-./BlockExtract -f ../../tests/ELF/ls_x64 -a x64  --blocks-out ./blockdbfile
+./build/bin/BlockExtract -f ./tests/ELF/ls_x64 -a x64  --blocks-out ./blockdbfile
 ```
 
 ### BlockReader
@@ -65,7 +65,7 @@ BlockReader consumes the block database created by BlockExtract. It may be usefu
 
 Example usage:
 ```
-./BlockReader -a ./blockdbfile
+./build/bin/BlockReader -d ./blockdbfile
 ```
 
 ### ImgTool
@@ -73,15 +73,31 @@ ImgTool is a test program that prints information about executable code sections
 
 Example usage:
 ```
-./ImgTool -a x64 -f ../../tests/EXE/x64_calc.exe
+./build/bin/ImgTool -a x64 -f ./tests/MachO/ls_FAT_x86_x64
 ```
 Example output:
 ```
-In file ../../tests/EXE/x64_calc.exe
-found 1 +X sections
+In file ./tests/MachO/ls_FAT_x86_x64
+found 6 +X sections
 ------------------
-Section of arch X86
-beginning at 0x401000 of size 0x5ae00
+Section of arch AMD64
+beginning at 0x1778 of size 0x3635
+------------------
+Section of arch AMD64
+beginning at 0x4dae of size 0x1bc
+------------------
+Section of arch AMD64
+beginning at 0x4f6c of size 0x2f4
+------------------
+Section of arch AMD64
+beginning at 0x5260 of size 0x568
+------------------
+Section of arch AMD64
+beginning at 0x57c8 of size 0x a0
+------------------
+Section of arch AMD64
+beginning at 0x5868 of size 0x798
+------------------
 ```
 
 ## References
