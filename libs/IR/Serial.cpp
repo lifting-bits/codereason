@@ -1864,6 +1864,7 @@ void serializeExpression(ExpressionPtr e, DModule::Expression *se) {
             serializeExpression(*it, se->add_ccall_args());
         }
     } else {
+        //cout << dynamic_pointer_cast<Expression>(e)->printExpr() << endl;
         assert(!"Unsupported serialization type");
     }
 
@@ -2034,11 +2035,15 @@ void serializeStatement(StatementPtr s, DModule::Statement *ss) {
         }
 
         vector<ExpressionPtr>   args = dirty->getArgs();
+        //cout << dirty->printStmt() << endl;
         for(vector<ExpressionPtr>::iterator it = args.begin(); 
             it != args.end();
             ++it)
         {
-            serializeExpression(*it, ss->add_dirty_args());
+            //cout << "dirty expr " << (*it)->printExpr() << endl;
+            if(*it != NULL) {
+                serializeExpression(*it, ss->add_dirty_args());
+            }
         }
 
         ss->set_dirty_calleename(dirty->getTarget());
